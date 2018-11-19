@@ -59,11 +59,11 @@ Examples of code parametes and runs
 
 Flappie is licensed from ONT under the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
-file, You can obtain one at (http://mozilla.org/MPL/2.0/).
+file, You can obtain one at [http://mozilla.org/MPL/2.0/].
 
-The vectorised math functions used by Flappie (src/sse_mathfun.h) are from
-(http://gruntthepeon.free.fr/ssemath/) and the original version of this file is
-under the 'zlib' licence.  See the top of (src/sse_mathfun.h) for details.
+The vectorised math functions used by Flappie [./src/sse_mathfun.h] are from
+[http://gruntthepeon.free.fr/ssemath/] and the original version of this file is
+under the 'zlib' licence.  See the top of [./src/sse_mathfun.h] for details.
 
 
 ## FAQs
