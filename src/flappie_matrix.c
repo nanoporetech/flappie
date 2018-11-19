@@ -7,6 +7,7 @@
 #include <math.h>
 #include "flappie_matrix.h"
 #include "flappie_stdlib.h"
+#include "util.h"
 
 flappie_matrix make_flappie_matrix(size_t nr, size_t nc) {
     assert(nr > 0);
@@ -405,6 +406,27 @@ void row_normalise_inplace(flappie_matrix C) {
         }
     }
 }
+
+
+void log_row_normalise_inplace(flappie_matrix C){
+    if(NULL == C){
+        // Input NULL due to earlier failure.  Propagate
+        return;
+    }
+
+    for (size_t col=0 ; col < C->nc; col++) {
+        const size_t offset = col * C->stride;
+        float row_logsum = C->data.f[offset];
+        for(size_t row=1 ; row < C->nr ; row++){
+            row_logsum = logsumexpf(row_logsum, C->data.f[offset + row]);
+        }
+        row_logsum /= C->nr;
+        for(size_t row=0 ; row < C->nr ; row++){
+            C->data.f[offset + row] -= row_logsum;
+        }
+    }
+}
+
 
 float max_flappie_matrix(const_flappie_matrix x) {
     if (NULL == x) {

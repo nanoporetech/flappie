@@ -466,11 +466,11 @@ flappie_matrix transpost_crf_flipflop(const_flappie_matrix trans, bool return_lo
     free(mem);
     fwd = free_flappie_matrix(fwd);
 
+
+    log_row_normalise_inplace(tpost);
     if(!return_log){
         exp_activation_inplace(tpost);
-        row_normalise_inplace(tpost);
     }
-
 
     return tpost;
 }

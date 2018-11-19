@@ -57,6 +57,7 @@ flappie_matrix affine_map2(const_flappie_matrix Xf, const_flappie_matrix Xb,
                             const_flappie_matrix Wf, const_flappie_matrix Wb,
                             const_flappie_matrix b, flappie_matrix C);
 void row_normalise_inplace(flappie_matrix C);
+void log_row_normalise_inplace(flappie_matrix C);
 
 float min_flappie_matrix(const_flappie_matrix mat);
 float max_flappie_matrix(const_flappie_matrix mat);
