@@ -38,6 +38,7 @@ static struct argp_option options[] = {
     {"dump", 4, "filename", 0, "Dump annotated blocks to HDF5 file"},
     {"format", 'f', "format", 0, "Format to output reads (FASTA or SAM)"},
     {"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)"},
+    {"model", 'm', "name", 0, "Model to use (\"help\" to list)"},
     {"output", 'o', "filename", 0, "Write to file rather than stdout"},
     {"prefix", 'p', "string", 0, "Prefix to append to name of each read"},
     {"temperature", 7, "factor", 0, "Temperature for weights"},
@@ -62,6 +63,7 @@ struct arguments {
     char * dump;
     enum flappie_outformat_type outformat;
     int limit;
+    enum model_type model;
     FILE * output;
     char * prefix;
     float temperature;
@@ -78,6 +80,7 @@ static struct arguments args = {
     .compression_chunk_size = 200,
     .dump = NULL,
     .limit = 0,
+    .model = FLAPPIE_MODEL_R94_PCR,
     .output = NULL,
     .outformat = FLAPPIE_OUTFORMAT_FASTA,
     .prefix = "",
@@ -89,6 +92,16 @@ static struct arguments args = {
     .files = NULL,
     .uuid = false
 };
+
+void fprint_flappie_models(FILE * fh){
+    if(NULL == fh){
+        return;
+    }
+
+    for(size_t mdl=0 ; mdl < flappie_nmodel ; mdl++){
+        fprintf(fh, "%10s : %s\n", flappie_model_string(mdl), flappie_model_description(mdl));
+    }
+}
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
     int ret = 0;
@@ -107,6 +120,18 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
     case 'l':
         args.limit = atoi(arg);
         assert(args.limit > 0);
+        break;
+    case 'm':
+        if(0 == strcasecmp(arg, "help")){
+            fprint_flappie_models(stdout);
+            exit(EXIT_SUCCESS);
+        }
+        args.model = get_flappie_model_type(arg);
+        if(FLAPPIE_MODEL_INVALID == args.model){
+            fprintf(stdout, "Invalid Flappie model \"%s\".\n", arg);
+            fprint_flappie_models(stdout);
+            exit(EXIT_FAILURE);
+        }
         break;
     case 'o':
         args.output = fopen(arg, "w");
@@ -180,7 +205,7 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 static struct argp argp = {options, parse_arg, args_doc, doc};
 
 
-static struct _raw_basecall_info calculate_post(char * filename){
+static struct _raw_basecall_info calculate_post(char * filename, enum model_type model){
     RETURN_NULL_IF(NULL == filename, (struct _raw_basecall_info){0});
 
     raw_table rt = read_raw(filename, true);
@@ -191,7 +216,7 @@ static struct _raw_basecall_info calculate_post(char * filename){
 
     medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
 
-    flappie_matrix trans_weights = flipflop_transitions_r94pcr(rt, args.temperature);
+    flappie_matrix trans_weights = flipflop_transitions(rt, args.temperature, model);
     if (NULL == trans_weights) {
         free(rt.raw);
         free(rt.uuid);
@@ -297,7 +322,7 @@ int main(int argc, char * argv[]){
             reads_started += 1;
 
             char * filename = globbuf.gl_pathv[fn2];
-            struct _raw_basecall_info res = calculate_post(filename);
+            struct _raw_basecall_info res = calculate_post(filename, args.model);
             if(NULL == res.basecall){
                 warnx("No basecall returned for %s", filename);
                 continue;

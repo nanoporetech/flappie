@@ -7,6 +7,69 @@
 #include "util.h"
 
 
+enum model_type get_flappie_model_type(const char *modelstr){
+    assert(NULL != modelstr);
+    if(0 == strcmp(modelstr, "r94_pcr")) {
+        return FLAPPIE_MODEL_R94_PCR;
+    }
+    if(0 == strcmp(modelstr, "r941_5mC")) {
+        return FLAPPIE_MODEL_R941_5mC;
+    }
+    return FLAPPIE_MODEL_INVALID;
+}
+
+
+const char *flappie_model_string(const enum model_type model){
+    switch(model){
+    case FLAPPIE_MODEL_R94_PCR:
+        return "r94_pcr";
+    case FLAPPIE_MODEL_R941_5mC:
+        return "r941_5mC";
+    case FLAPPIE_MODEL_INVALID:
+        errx(EXIT_FAILURE, "Invalid Flappie model  %s:%d", __FILE__, __LINE__);
+    default:
+        errx(EXIT_FAILURE, "Flappie enum failure -- report as bug. %s:%d \n", __FILE__, __LINE__);
+    }
+    return NULL;
+}
+        
+
+const char *flappie_model_description(const enum model_type model){
+    switch(model){
+    case FLAPPIE_MODEL_R94_PCR:
+        return "R9.4 model for MinION.  Trained from a PCR'd library";
+    case FLAPPIE_MODEL_R941_5mC:
+        return "R9.4.1 model for MinION; 5mC aware.  Trained from native NA12878 library";
+    case FLAPPIE_MODEL_INVALID:
+        errx(EXIT_FAILURE, "Invalid Flappie model  %s:%d", __FILE__, __LINE__);
+    default:
+        errx(EXIT_FAILURE, "Flappie enum failure -- report as bug. %s:%d \n", __FILE__, __LINE__);
+    }
+    return NULL;
+}
+
+
+transition_function_ptr get_transition_function(const enum model_type model){
+    switch(model){
+    case FLAPPIE_MODEL_R94_PCR:
+        return flipflop_transitions_r94pcr;
+    case FLAPPIE_MODEL_R941_5mC:
+        return flipflop_transitions_r941native5mC;
+    case FLAPPIE_MODEL_INVALID:
+        errx(EXIT_FAILURE, "Invalid Flappie model  %s:%d", __FILE__, __LINE__);
+    default:
+        errx(EXIT_FAILURE, "Flappie enum failure -- report as bug. %s:%d \n", __FILE__, __LINE__);
+    }
+    return NULL;
+}
+
+
+flappie_matrix flipflop_transitions(const raw_table signal, float temperature, enum model_type model){
+    transition_function_ptr transfun = get_transition_function(model);
+    return transfun(signal, temperature);
+}
+
+
 typedef struct {
     //  Convolution layer
     const flappie_matrix conv_W;
@@ -148,7 +211,7 @@ sloika_model flipflop_r941native5mC_sloika = {
 };
 
 
-flappie_matrix flipflop_transitions(const raw_table signal, float temperature, const sloika_model * net){
+flappie_matrix flipflop_gru_transitions(const raw_table signal, float temperature, const sloika_model * net){
     RETURN_NULL_IF(0 == signal.n, NULL);
     RETURN_NULL_IF(NULL == signal.raw, NULL);
 
@@ -284,7 +347,7 @@ flappie_matrix flipflop_relu_transitions(const raw_table signal, float temperatu
 }
 
 flappie_matrix flipflop_transitions_r94pcr(const raw_table signal, float temperature){
-    return flipflop_transitions(signal, temperature, &flipflop_r94pcr_sloika);
+    return flipflop_gru_transitions(signal, temperature, &flipflop_r94pcr_sloika);
 }
 
 flappie_matrix flipflop_transitions_r941native5mC(const raw_table signal, float temperature){
