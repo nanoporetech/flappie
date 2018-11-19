@@ -1,0 +1,38 @@
+language: c
+sudo: enabled
+dist: trusty
+
+git:
+    submodules: false
+
+before_install:
+    - set OMP_NUM_THREADS=2
+    - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+
+install: 
+    - sudo apt-get install -y make libhdf5-7 libhdf5-dev libopenblas-base libopenblas-dev libcunit1-dev
+
+language: c
+
+compiler:
+    - gcc
+
+script:
+    - if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make -j 4 && make test && cd .. ; fi
+    - if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then docker run --rm -v `pwd`:/io -w /io ontresearch/manylinux1_x86_64_openblas /io/python/build-wheels.sh ; fi
+
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "DqfJ137wjGM3ygcLMiKd6pP6GHZbXFvdSl9F+dqlLsxJrnbPd6vxsZN8ROy+UjF4p/IFWqsuXtojSPWEgQs4vwQlIRuD7AcngB4KLQ+nMFFtKLDrIY7iNlCsTtP95SQ3NbJnLrJkAPuiovbV2P79xGj33G0jV9yBaoOGZ9BKMej36oxkUNKghRHNfInj/HQtoxK9XimwJccjoKN9yVZFxcJF5DdvmT0KuApE/X8nRJjDBt1nnOT4JLX/mf1dLgYqgvgHMyZlJIhT+V0uqz9KtFXxX4DnPM0HzhghcqmRA46nB3rGLcJmDbKKLqC3XocO/+sR6fE5x/7kuTeYmYMrW92s2IZlR7f0G47ykFpGbb9gaZdMdd6nrc44qHo60Yju2V9wNZe+KOnu2CzvamBZ18hGBlyPPBetFVV2WgIe0TuH6eWwVWudpTwtExv/MG3leUirg3vu0mEH2pVn8X/J5Zg5PgsS/Dq4SnnXfonyfqJ+6oWDYpFi46TezcRIlmaHgWcaBQD0waB0KIxKUwk1FmIGp3Rqy+UxER55xqJS+pKwJR2uKv+EM5BcFNjUlmXQbbPzP5zbjJuPD+YRIlHZJbWh2gJ1fMfiYvw4nJwjbu3xZiwe/S539AO+KpaYwwiCsmVJRdPgDqNTCiMaFWFmZhX9qnNaAud/x4NGPx4buAo="
+
+addons:
+  coverity_scan:
+    project:
+      name: "nanoporetech/flappie"
+      description: "Build submitted via Travis CI"
+    notification_email: tim.massingham@nanoporetech.com
+    build_command_prepend: "cmake ."
+    build_command:   "make -j 4"
+    branch_pattern: coverity_scan
