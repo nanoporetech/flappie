@@ -1043,21 +1043,21 @@ double crf_manystay_partition_function(const_flappie_matrix C){
 
         for(size_t stay=nbase ; stay < nstate ; stay++){
            const size_t from_base = stay - nbase;
-           curr[stay] = logsumexpf(prev[stay] + C->data.f[offset_stay + stay],
+           curr[stay] = logsumexp(prev[stay] + C->data.f[offset_stay + stay],
                                    prev[from_base] + C->data.f[offset_stay + from_base]);
         }
         for(size_t to_state=0 ; to_state < nbase ; to_state++){
             const size_t offsetS = offset + to_state * nstate;
             curr[to_state] = C->data.f[offsetS + 0] + prev[0];
             for(size_t from_state=1 ; from_state < nstate ; from_state++){
-                curr[to_state] = logsumexpf(curr[to_state], C->data.f[offsetS + from_state] + prev[from_state]);
+                curr[to_state] = logsumexp(curr[to_state], C->data.f[offsetS + from_state] + prev[from_state]);
             }
         }
     }
 
     double logZ = curr[0];
     for(size_t st=1 ; st < nstate ; st++){
-        logZ = logsumexpf(logZ, curr[st]);
+        logZ = logsumexp(logZ, curr[st]);
     }
 
     free(mem);
