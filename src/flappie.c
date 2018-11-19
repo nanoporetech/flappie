@@ -35,7 +35,7 @@ extern const char *argp_program_bug_address;
 static char doc[] = "Flappie basecaller -- basecall from raw signal";
 static char args_doc[] = "fast5 [fast5 ...]";
 static struct argp_option options[] = {
-    {"dump", 4, "filename", 0, "Dump annotated blocks to HDF5 file"},
+    //{"dump", 4, "filename", 0, "Dump annotated blocks to HDF5 file"},
     {"format", 'f', "format", 0, "Format to output reads (FASTA or SAM)"},
     {"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)"},
     {"model", 'm', "name", 0, "Model to use (\"help\" to list)"},
