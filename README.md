@@ -3,9 +3,6 @@
 
 # Flappie
 
-[![Travis](https://img.shields.io/travis/nanoporetech/flappie.svg)]()                                 │
-[![Coverity Scan](https://img.shields.io/coverity/scan/12969.svg)]() 
-
 ## Overview
 
 Basecall Fast5 reads using _flip-flop_ basecalling.  
