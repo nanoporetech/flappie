@@ -1,6 +1,7 @@
 #pragma once
 #ifndef UTIL_H
 #    define UTIL_H
+#    include <assert.h>
 #    include <immintrin.h>
 #    include <math.h>
 #    include <stdbool.h>
@@ -41,6 +42,9 @@
 /* From math.h */
 #    ifndef M_LN2
 #        define M_LN2          0.69314718055994530942  /* log_e 2 */
+#    endif
+#    ifndef M_LOG10E
+#        define M_LOG10E       0.43429448190325182765  /* log_10 e */
 #    endif
 
 /* Create a vector of  ones.  */
@@ -182,6 +186,19 @@ static inline double logsumexp(double x, double y){
 }
 
 
+static inline float qscoref(float p){
+    assert(p >= 0.0f && p <=1.0f);
+    return -(10.0f * M_LOG10E) * log1pf(-p);
+}
+
+
+static inline double qscore(double p){
+    assert(p >= 0.0 && p <=1.0);
+    return -(10.0 * M_LOG10E) * log1p(-p);
+}
+
+
+
 /**
  *   Vectorised functions
  **/
@@ -294,11 +311,14 @@ void studentise_array_kahan(float *x, size_t n);
 void difference_array(float *x, size_t n);
 void filter_array(float *x, size_t n, float fill_val, float thresh);
 void clip_array(float *x, size_t n, float thresh);
+void qscore_array(float *x, size_t n);
 
 bool equality_array(double const * x, double const * y, size_t n, double const tol);
 bool equality_arrayf(float const * x, float const * y, size_t n, float const tol);
 bool equality_arrayi(int const * x, int const * y, size_t n);
 size_t ndiff_array(const int * x, size_t n);
 bool mod_array_inplace(int * x, size_t n, int m);
+
+char * phredstr_from_qscore(float * x, size_t n);
 
 #endif                          /* UTIL_H */

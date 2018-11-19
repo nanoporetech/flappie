@@ -9,7 +9,7 @@
 float argmax_decoder(const_flappie_matrix logpost, int *seq);
 char * collapse_repeats(int const * path, size_t npos, int modbase);
 
-float decode_crf_flipflop(const_flappie_matrix trans, bool combine_stays, int * path);
+float decode_crf_flipflop(const_flappie_matrix trans, bool combine_stays, int * path, float * qpath);
 float constrained_crf_flipflop(const_flappie_matrix post, int * path);
 
 flappie_matrix posterior_crf_flipflop(const_flappie_matrix trans, bool return_log);

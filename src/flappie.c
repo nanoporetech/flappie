@@ -201,6 +201,7 @@ static struct _raw_basecall_info calculate_post(char * filename){
     const size_t nbase = nbase_from_flipflop_nparam(trans_weights->nr);
     const int nblock = trans_weights->nc;
     int * path = calloc(nblock + 2, sizeof(int));
+    float * qpath = calloc(nblock + 2, sizeof(float));
     int * pos = calloc(nblock + 1, sizeof(int));
 
     float score = NAN;
@@ -208,10 +209,11 @@ static struct _raw_basecall_info calculate_post(char * filename){
     char * quality = NULL;
 
     flappie_matrix posterior = transpost_crf_flipflop(trans_weights, true);
-    score = decode_crf_flipflop(posterior, false, path);
+    score = decode_crf_flipflop(posterior, false, path, qpath);
     basecall = collapse_repeats(path, nblock, nbase);
     posterior = free_flappie_matrix(posterior);
 
+    free(qpath);
     free(path);
     trans_weights = free_flappie_matrix(trans_weights);
     const size_t basecall_length = strlen(basecall);
@@ -307,6 +309,7 @@ int main(int argc, char * argv[]){
             write_trace(hdf5out, basename(filename), res,
                         args.compression_chunk_size,
                         args.compression_level);
+
 
             free(res.rt.raw);
             free(res.rt.uuid);

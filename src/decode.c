@@ -80,11 +80,25 @@ void colmaxf(float * x, int nr, int nc, int * idx){
 }
 
 
+inline size_t trans_lookup(size_t from, size_t to, size_t nbase){
+    assert(nbase > = 0);
+    assert(from >= 0 && from < nbase + nbase);
+    assert(to >= 0 && to < nbase + nbase);
+    assert(to < nbase || ((to % nbase) == (from % nbase)));
+
+    const size_t nstate = nbase + nbase;
+    const size_t offset = nbase * nstate;
+
+    return (to < nbase) ? (to * nstate + from) : (offset + from);
+}
+
+
 /**   Viterbi decoding of CRF flipflop
  **/
-float decode_crf_flipflop(const_flappie_matrix trans, bool combine_stays, int * path){
+float decode_crf_flipflop(const_flappie_matrix trans, bool combine_stays, int * path, float * qpath){
     RETURN_NULL_IF(NULL == trans, NAN);
     RETURN_NULL_IF(NULL == path, NAN);
+    RETURN_NULL_IF(NULL == qpath, NAN);
 
     const size_t nblk = trans->nc;
     const size_t nbase = roundf((-1.0f + sqrtf(1.0f + 2.0f * trans->nr)) / 2.0f);
@@ -150,8 +164,11 @@ float decode_crf_flipflop(const_flappie_matrix trans, bool combine_stays, int * 
     path[nblk] = argmaxf(curr, nstate);
     for(size_t blk=nblk ; blk > 0 ; blk--){
         const size_t offset = (blk - 1) * tb->stride;
+        const size_t qoffset = (blk - 1) * trans->stride;
         path[blk - 1] = tb->data.f[offset + path[blk]];
+        qpath[blk] = trans->data.f[qoffset + trans_lookup(path[blk-1], path[blk], nbase)];
     }
+    qpath[0] = NAN;
 
     if(combine_stays){
         for(size_t blk=0 ; blk <= nblk ; blk++){
@@ -332,7 +349,6 @@ flappie_matrix posterior_crf_flipflop(const_flappie_matrix trans, bool return_lo
 
     return fwd;
 }
-
 
 
 /**   Posterior probabilities of CRF flipflop

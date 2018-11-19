@@ -383,3 +383,26 @@ bool mod_array_inplace(int * x, size_t n, int m){
     return true;
 }
 
+
+void qscore_array(float * x, size_t n){
+    if(NULL == x || 0 == n){
+        return;
+    }
+    for(size_t i=0 ; i < n ; i++){
+        x[i] = qscoref(x[i]);
+    }
+}
+
+
+char * phredstr_from_qscore(float * x, size_t n){
+    if(NULL == x || 0 == n){
+        return NULL;
+    }
+    char * phred = calloc(n + 1, sizeof(char));
+    for(size_t i=0 ; i < n ; i++){
+        assert(x[i] >= 0.0f);
+        const char ph = roundf(33.0f + x[i]);
+        phred[i] = (ph <= 126) ? ph : 126;
+    }
+    return phred;
+}
