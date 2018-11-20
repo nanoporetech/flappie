@@ -1,6 +1,7 @@
 #include "layers.h"
-#include "models/flipflop_r94pcr.h"
+#include "models/flipflop_r941native.h"
 #include "models/flipflop_r941native5mC.h"
+#include "models/flipflop_r10Cpcr.h"
 #include "networks.h"
 #include "nnfeatures.h"
 #include "flappie_stdlib.h"
@@ -9,11 +10,14 @@
 
 enum model_type get_flappie_model_type(const char *modelstr){
     assert(NULL != modelstr);
-    if(0 == strcmp(modelstr, "r94_pcr")) {
-        return FLAPPIE_MODEL_R94_PCR;
+    if(0 == strcmp(modelstr, "r941_native")) {
+        return FLAPPIE_MODEL_R941_NATIVE;
     }
     if(0 == strcmp(modelstr, "r941_5mC")) {
         return FLAPPIE_MODEL_R941_5mC;
+    }
+    if(0 == strcmp(modelstr, "r10c_pcr")) {
+        return FLAPPIE_MODEL_R10C_PCR;
     }
     return FLAPPIE_MODEL_INVALID;
 }
@@ -21,10 +25,12 @@ enum model_type get_flappie_model_type(const char *modelstr){
 
 const char *flappie_model_string(const enum model_type model){
     switch(model){
-    case FLAPPIE_MODEL_R94_PCR:
-        return "r94_pcr";
+    case FLAPPIE_MODEL_R941_NATIVE:
+        return "r941_native";
     case FLAPPIE_MODEL_R941_5mC:
         return "r941_5mC";
+    case FLAPPIE_MODEL_R10C_PCR:
+        return "r10c_pcr";
     case FLAPPIE_MODEL_INVALID:
         errx(EXIT_FAILURE, "Invalid Flappie model  %s:%d", __FILE__, __LINE__);
     default:
@@ -36,10 +42,12 @@ const char *flappie_model_string(const enum model_type model){
 
 const char *flappie_model_description(const enum model_type model){
     switch(model){
-    case FLAPPIE_MODEL_R94_PCR:
-        return "R9.4 model for MinION.  Trained from a PCR'd library";
+    case FLAPPIE_MODEL_R941_NATIVE:
+        return "R9.4.1 model for MinION.  Trained from native DNA library";
     case FLAPPIE_MODEL_R941_5mC:
         return "R9.4.1 model for MinION; 5mC aware.  Trained from native NA12878 library";
+    case FLAPPIE_MODEL_R10C_PCR:
+        return "R10C model for MinION.  Trained from PCR'd DNA library";
     case FLAPPIE_MODEL_INVALID:
         errx(EXIT_FAILURE, "Invalid Flappie model  %s:%d", __FILE__, __LINE__);
     default:
@@ -51,10 +59,12 @@ const char *flappie_model_description(const enum model_type model){
 
 transition_function_ptr get_transition_function(const enum model_type model){
     switch(model){
-    case FLAPPIE_MODEL_R94_PCR:
-        return flipflop_transitions_r94pcr;
+    case FLAPPIE_MODEL_R941_NATIVE:
+        return flipflop_transitions_r941native;
     case FLAPPIE_MODEL_R941_5mC:
         return flipflop_transitions_r941native5mC;
+    case FLAPPIE_MODEL_R10C_PCR:
+        return flipflop_transitions_r10Cpcr;
     case FLAPPIE_MODEL_INVALID:
         errx(EXIT_FAILURE, "Invalid Flappie model  %s:%d", __FILE__, __LINE__);
     default:
@@ -137,44 +147,39 @@ typedef struct {
 } guppy_model;
 
 
-sloika_model flipflop_r94pcr_sloika = {
+guppy_model flipflop_r941native_guppy = {
     //  Convolution layer
-    .conv_W = &_conv_rnnrf_flipflop_r94pcr_W,
-    .conv_b = &_conv_rnnrf_flipflop_r94pcr_b,
-    .conv_stride = conv_rnnrf_flipflop_r94pcr_stride,
+    .conv_W = &_conv_rnnrf_flipflop_r941native_W,
+    .conv_b = &_conv_rnnrf_flipflop_r941native_b,
+    .conv_stride = conv_rnnrf_flipflop_r941native_stride,
     //.conv_stride = 2,
     //  First modified GRU (backward)
-    .gruB1_iW = &_gruB1_rnnrf_flipflop_r94pcr_iW,
-    .gruB1_sW = &_gruB1_rnnrf_flipflop_r94pcr_sW,
-    .gruB1_sW2 = &_gruB1_rnnrf_flipflop_r94pcr_sW2,
-    .gruB1_b = &_gruB1_rnnrf_flipflop_r94pcr_b,
+    .gruB1_iW = &_gruB1_rnnrf_flipflop_r941native_iW,
+    .gruB1_sW = &_gruB1_rnnrf_flipflop_r941native_sW,
+    .gruB1_b = &_gruB1_rnnrf_flipflop_r941native_b,
     //  Second modified GRU (forward)
-    .gruF2_iW = &_gruF2_rnnrf_flipflop_r94pcr_iW,
-    .gruF2_sW = &_gruF2_rnnrf_flipflop_r94pcr_sW,
-    .gruF2_sW2 = &_gruF2_rnnrf_flipflop_r94pcr_sW2,
-    .gruF2_b = &_gruF2_rnnrf_flipflop_r94pcr_b,
+    .gruF2_iW = &_gruF2_rnnrf_flipflop_r941native_iW,
+    .gruF2_sW = &_gruF2_rnnrf_flipflop_r941native_sW,
+    .gruF2_b = &_gruF2_rnnrf_flipflop_r941native_b,
     //  Third modified GRU (backward)
-    .gruB3_iW = &_gruB3_rnnrf_flipflop_r94pcr_iW,
-    .gruB3_sW = &_gruB3_rnnrf_flipflop_r94pcr_sW,
-    .gruB3_sW2 = &_gruB3_rnnrf_flipflop_r94pcr_sW2,
-    .gruB3_b = &_gruB3_rnnrf_flipflop_r94pcr_b,
+    .gruB3_iW = &_gruB3_rnnrf_flipflop_r941native_iW,
+    .gruB3_sW = &_gruB3_rnnrf_flipflop_r941native_sW,
+    .gruB3_b = &_gruB3_rnnrf_flipflop_r941native_b,
     //  Fourth modified GRU (forward)
-    .gruF4_iW = &_gruF4_rnnrf_flipflop_r94pcr_iW,
-    .gruF4_sW = &_gruF4_rnnrf_flipflop_r94pcr_sW,
-    .gruF4_sW2 = &_gruF4_rnnrf_flipflop_r94pcr_sW2,
-    .gruF4_b = &_gruF4_rnnrf_flipflop_r94pcr_b,
+    .gruF4_iW = &_gruF4_rnnrf_flipflop_r941native_iW,
+    .gruF4_sW = &_gruF4_rnnrf_flipflop_r941native_sW,
+    .gruF4_b = &_gruF4_rnnrf_flipflop_r941native_b,
     //  Fifth modified GRU (backward)
-    .gruB5_iW = &_gruB5_rnnrf_flipflop_r94pcr_iW,
-    .gruB5_sW = &_gruB5_rnnrf_flipflop_r94pcr_sW,
-    .gruB5_sW2 = &_gruB5_rnnrf_flipflop_r94pcr_sW2,
-    .gruB5_b = &_gruB5_rnnrf_flipflop_r94pcr_b,
+    .gruB5_iW = &_gruB5_rnnrf_flipflop_r941native_iW,
+    .gruB5_sW = &_gruB5_rnnrf_flipflop_r941native_sW,
+    .gruB5_b = &_gruB5_rnnrf_flipflop_r941native_b,
     //  Output
-    .FF_W = &_FF_rnnrf_flipflop_r94pcr_W,
-    .FF_b = &_FF_rnnrf_flipflop_r94pcr_b
+    .FF_W = &_FF_rnnrf_flipflop_r941native_W,
+    .FF_b = &_FF_rnnrf_flipflop_r941native_b
 };
 
 
-sloika_model flipflop_r941native5mC_sloika = {
+guppy_model flipflop_r941native5mC_guppy = {
     //  Convolution layer
     .conv_W = &_conv_rnnrf_flipflop_r941native5mC_W,
     .conv_b = &_conv_rnnrf_flipflop_r941native5mC_b,
@@ -183,31 +188,58 @@ sloika_model flipflop_r941native5mC_sloika = {
     //  First modified GRU (backward)
     .gruB1_iW = &_gruB1_rnnrf_flipflop_r941native5mC_iW,
     .gruB1_sW = &_gruB1_rnnrf_flipflop_r941native5mC_sW,
-    .gruB1_sW2 = &_gruB1_rnnrf_flipflop_r941native5mC_sW2,
     .gruB1_b = &_gruB1_rnnrf_flipflop_r941native5mC_b,
     //  Second modified GRU (forward)
     .gruF2_iW = &_gruF2_rnnrf_flipflop_r941native5mC_iW,
     .gruF2_sW = &_gruF2_rnnrf_flipflop_r941native5mC_sW,
-    .gruF2_sW2 = &_gruF2_rnnrf_flipflop_r941native5mC_sW2,
     .gruF2_b = &_gruF2_rnnrf_flipflop_r941native5mC_b,
     //  Third modified GRU (backward)
     .gruB3_iW = &_gruB3_rnnrf_flipflop_r941native5mC_iW,
     .gruB3_sW = &_gruB3_rnnrf_flipflop_r941native5mC_sW,
-    .gruB3_sW2 = &_gruB3_rnnrf_flipflop_r941native5mC_sW2,
     .gruB3_b = &_gruB3_rnnrf_flipflop_r941native5mC_b,
     //  Fourth modified GRU (forward)
     .gruF4_iW = &_gruF4_rnnrf_flipflop_r941native5mC_iW,
     .gruF4_sW = &_gruF4_rnnrf_flipflop_r941native5mC_sW,
-    .gruF4_sW2 = &_gruF4_rnnrf_flipflop_r941native5mC_sW2,
     .gruF4_b = &_gruF4_rnnrf_flipflop_r941native5mC_b,
     //  Fifth modified GRU (backward)
     .gruB5_iW = &_gruB5_rnnrf_flipflop_r941native5mC_iW,
     .gruB5_sW = &_gruB5_rnnrf_flipflop_r941native5mC_sW,
-    .gruB5_sW2 = &_gruB5_rnnrf_flipflop_r941native5mC_sW2,
     .gruB5_b = &_gruB5_rnnrf_flipflop_r941native5mC_b,
     //  Output
     .FF_W = &_FF_rnnrf_flipflop_r941native5mC_W,
     .FF_b = &_FF_rnnrf_flipflop_r941native5mC_b
+};
+
+
+guppy_model flipflop_r10Cpcr_guppy = {
+    //  Convolution layer
+    .conv_W = &_conv_rnnrf_flipflop_r10Cpcr_W,
+    .conv_b = &_conv_rnnrf_flipflop_r10Cpcr_b,
+    .conv_stride = conv_rnnrf_flipflop_r10Cpcr_stride,
+    //.conv_stride = 2,
+    //  First modified GRU (backward)
+    .gruB1_iW = &_gruB1_rnnrf_flipflop_r10Cpcr_iW,
+    .gruB1_sW = &_gruB1_rnnrf_flipflop_r10Cpcr_sW,
+    .gruB1_b = &_gruB1_rnnrf_flipflop_r10Cpcr_b,
+    //  Second modified GRU (forward)
+    .gruF2_iW = &_gruF2_rnnrf_flipflop_r10Cpcr_iW,
+    .gruF2_sW = &_gruF2_rnnrf_flipflop_r10Cpcr_sW,
+    .gruF2_b = &_gruF2_rnnrf_flipflop_r10Cpcr_b,
+    //  Third modified GRU (backward)
+    .gruB3_iW = &_gruB3_rnnrf_flipflop_r10Cpcr_iW,
+    .gruB3_sW = &_gruB3_rnnrf_flipflop_r10Cpcr_sW,
+    .gruB3_b = &_gruB3_rnnrf_flipflop_r10Cpcr_b,
+    //  Fourth modified GRU (forward)
+    .gruF4_iW = &_gruF4_rnnrf_flipflop_r10Cpcr_iW,
+    .gruF4_sW = &_gruF4_rnnrf_flipflop_r10Cpcr_sW,
+    .gruF4_b = &_gruF4_rnnrf_flipflop_r10Cpcr_b,
+    //  Fifth modified GRU (backward)
+    .gruB5_iW = &_gruB5_rnnrf_flipflop_r10Cpcr_iW,
+    .gruB5_sW = &_gruB5_rnnrf_flipflop_r10Cpcr_sW,
+    .gruB5_b = &_gruB5_rnnrf_flipflop_r10Cpcr_b,
+    //  Output
+    .FF_W = &_FF_rnnrf_flipflop_r10Cpcr_W,
+    .FF_b = &_FF_rnnrf_flipflop_r10Cpcr_b
 };
 
 
@@ -346,10 +378,15 @@ flappie_matrix flipflop_relu_transitions(const raw_table signal, float temperatu
     return trans;
 }
 
-flappie_matrix flipflop_transitions_r94pcr(const raw_table signal, float temperature){
-    return flipflop_gru_transitions(signal, temperature, &flipflop_r94pcr_sloika);
+
+flappie_matrix flipflop_transitions_r941native(const raw_table signal, float temperature){
+    return flipflop_guppy_transitions(signal, temperature, &flipflop_r941native_guppy);
 }
 
 flappie_matrix flipflop_transitions_r941native5mC(const raw_table signal, float temperature){
-    return flipflop_relu_transitions(signal, temperature, &flipflop_r941native5mC_sloika);
+    return flipflop_guppy_transitions(signal, temperature, &flipflop_r941native5mC_guppy);
+}
+
+flappie_matrix flipflop_transitions_r10Cpcr(const raw_table signal, float temperature){
+    return flipflop_guppy_transitions(signal, temperature, &flipflop_r10Cpcr_guppy);
 }
