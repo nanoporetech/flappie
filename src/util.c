@@ -398,11 +398,9 @@ char * phredstr_from_qscore(float * x, size_t n){
     if(NULL == x || 0 == n){
         return NULL;
     }
-    char * phred = calloc(n + 1, sizeof(char));
+    char * ph = calloc(n + 1, sizeof(char));
     for(size_t i=0 ; i < n ; i++){
-        assert(x[i] >= 0.0f);
-        const char ph = roundf(33.0f + x[i]);
-        phred[i] = (ph <= 126) ? ph : 126;
+        ph[i] = phredf(x[i]);
     }
-    return phred;
+    return ph;
 }

@@ -226,19 +226,27 @@ static struct _raw_basecall_info calculate_post(char * filename, enum model_type
     const size_t nbase = nbase_from_flipflop_nparam(trans_weights->nr);
     const int nblock = trans_weights->nc;
     int * path = calloc(nblock + 2, sizeof(int));
+    int * path_idx = calloc(nblock + 2, sizeof(int));
     float * qpath = calloc(nblock + 2, sizeof(float));
     int * pos = calloc(nblock + 1, sizeof(int));
 
     float score = NAN;
-    char * basecall = NULL;
-    char * quality = NULL;
 
     flappie_matrix posterior = transpost_crf_flipflop(trans_weights, true);
     score = decode_crf_flipflop(posterior, false, path, qpath);
-    basecall = collapse_repeats(path, nblock, nbase);
-    posterior = free_flappie_matrix(posterior);
+    size_t path_nidx = change_positions(path, nblock, path_idx);
 
+    char * basecall = calloc(path_nidx + 1, sizeof(char));
+    char * quality = calloc(path_nidx + 1, sizeof(char));
+    for(size_t i=0 ; i < path_nidx ; i++){
+        const size_t idx = path_idx[i];
+        basecall[i] = base_lookup[path[idx] % nbase];
+        quality[i] = phredf(expf(qpath[idx]));
+    }
+
+    posterior = free_flappie_matrix(posterior);
     free(qpath);
+    free(path_idx);
     free(path);
     trans_weights = free_flappie_matrix(trans_weights);
     const size_t basecall_length = strlen(basecall);

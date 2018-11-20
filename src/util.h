@@ -198,6 +198,17 @@ static inline double qscore(double p){
 }
 
 
+static inline char phredf(float p){
+    char ph = roundf(33.0f + qscoref(p));
+    return (ph < 126) ? ph : 126;
+}
+
+
+static inline char phred(float p){
+    char ph = round(33.0 + qscore(p));
+    return (ph < 126) ? ph : 126;
+}
+
 
 /**
  *   Vectorised functions

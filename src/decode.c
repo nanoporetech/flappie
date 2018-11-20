@@ -30,7 +30,6 @@ float argmax_decoder(const_flappie_matrix logpost, int *seq) {
 }
 
 
-const char base_lookup[5] = { 'A', 'C', 'G', 'T', 'Z' };
 char * collapse_repeats(int const * path, size_t npos, int modbase){
     assert(modbase > 0);
     RETURN_NULL_IF(NULL == path, NULL);
@@ -49,12 +48,28 @@ char * collapse_repeats(int const * path, size_t npos, int modbase){
     for(size_t pos=1, bpos=1 ; pos < npos ; pos++){
         if(path[pos] != path[pos - 1]){
             assert(bpos < nbase);
-            basecall[bpos] = base_lookup[path[pos] % modbase];
+            basecall[bpos] = basechar(path[pos] % modbase);
             bpos += 1;
         }
     }
 
     return basecall;
+}
+
+
+size_t change_positions(int const * path, size_t npos, int * chpos){
+    RETURN_NULL_IF(NULL == path, 0);
+    RETURN_NULL_IF(NULL == chpos, 0);
+
+    size_t nch = 0;
+    for(size_t pos=1 ; pos < npos ; pos++){
+        if(path[pos] == path[pos -1 ]){
+            continue;
+        }
+        chpos[nch] = pos;
+        nch += 1;
+    }
+    return nch;
 }
 
 
