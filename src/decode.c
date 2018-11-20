@@ -489,3 +489,49 @@ flappie_matrix transpost_crf_flipflop(const_flappie_matrix trans, bool return_lo
 
     return tpost;
 }
+
+flappie_imatrix trace_from_posterior(const flappie_matrix tpost){
+    RETURN_NULL_IF(NULL == tpost, NULL);
+    const size_t nbase = nbase_from_flipflop_nparam(tpost->nr);
+    const size_t nstate = nbase + nbase;
+    assert((nbase + 1) * nstate == tpost->nc);
+
+
+    flappie_imatrix trace = make_flappie_imatrix(nstate, tpost->nc + 1);
+    RETURN_NULL_IF(NULL == trace, NULL);
+
+
+    //  First Position
+    for(size_t st_from=0 ; st_from < nstate ; st_from++){
+        float sum = 0.0f;
+        for(size_t st_to=0 ; st_to < nbase ; st_to++){
+            sum += tpost->data.f[st_to * nstate + st_from];
+        }
+        sum += tpost->data.f[nbase * nstate + st_from];
+        trace->data.f[st_from] = roundf(255.0f * sum);
+    }
+
+    //  Other positions
+    for(size_t blk=0 ; blk < tpost->nc ; blk++){
+        const size_t offset_trace = (blk + 1) * trace->stride;
+        const size_t offset_post = blk * tpost->stride;
+        for(size_t st_to=0 ; st_to < nbase ; st_to++){
+            //  Transition to flip state
+            const size_t offset2 = offset_post + st_to * nstate;
+            float sum = tpost->data.f[offset2];
+            for(size_t st_from=1 ; st_from < nstate ; st_from++){
+                sum += tpost->data.f[offset2 + st_from];
+            }
+            trace->data.f[offset_trace + st_to] = roundf(255.0f * sum);
+        }
+
+        const size_t offset_post2 = blk * tpost->stride + nbase * nstate;
+        for(size_t st_to=nbase ; st_to < nstate ; st_to++){
+            const float sum = tpost->data.f[offset_post2 + (st_to - nbase)]
+                            + tpost->data.f[offset_post2 + st_to];;
+            trace->data.f[offset_trace + st_to] = roundf(255.0f * sum);
+        }
+    }
+
+    return trace;
+}

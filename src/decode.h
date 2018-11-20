@@ -19,5 +19,6 @@ float constrained_crf_flipflop(const_flappie_matrix post, int * path);
 
 flappie_matrix posterior_crf_flipflop(const_flappie_matrix trans, bool return_log);
 flappie_matrix transpost_crf_flipflop(const_flappie_matrix trans, bool return_log);
+flappie_imatrix trace_from_posterior(flappie_matrix tpost);
 
 #endif                          /* DECODE_H */
