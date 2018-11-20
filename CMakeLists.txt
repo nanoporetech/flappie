@@ -75,6 +75,7 @@ add_library (flappie_objects OBJECT
 	src/flappie_common.c 
 	src/flappie_matrix.c 
         src/flappie_output.c
+        src/flappie_structures.c
 	src/util.c)
 set_property(TARGET flappie_objects PROPERTY POSITION_INDEPENDENT_CODE 1)
 add_library (flappie_static STATIC $<TARGET_OBJECTS:flappie_objects>)

@@ -3,8 +3,13 @@
 #define _C99_SOURCE  // Required for snprintf on Mac (not set by clang -std=c99)
 #include <assert.h>
 #include <err.h>
+#include <fcntl.h>
 #include <math.h>
 #include <stdio.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 #include "fast5_interface.h"
 #include "flappie_stdlib.h"
 #include "util.h"
@@ -21,6 +26,7 @@ typedef struct {
     float range;
     float sample_rate;
 } fast5_raw_scaling;
+
 
 float read_float_attribute(hid_t group, const char *attribute) {
     float val = NAN;
@@ -42,15 +48,90 @@ float read_float_attribute(hid_t group, const char *attribute) {
 }
 
 
-herr_t create_group(hid_t root, const char * name){
+hid_t open_or_create_hdf5(const char * filename){
+    hid_t hdf5out = -1;
+    if(NULL == filename){
+        return hdf5out;
+    }
+
+    int fd = open(filename, O_CREAT | O_WRONLY | O_EXCL, S_IRUSR | S_IWUSR);
+    if(fd < 0){
+        hdf5out = H5Fopen(filename, H5F_ACC_RDWR, H5P_DEFAULT);
+    } else {
+        close(fd);
+        unlink(filename);
+        hdf5out = H5Fcreate(filename, H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);
+    }
+    return hdf5out;
+}
+
+
+hid_t create_group(hid_t root, const char * name){
     if(root < 0 || NULL == name){
         return -1;
     }
     hid_t group = H5Gcreate(root, name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    if(group < 0){
+    return group;
+}
+
+
+hid_t set_compression(int rank, hsize_t *chunk_size, int compression_level){
+    assert(compression_level >= 0 && compression_level <= 9);
+
+    hid_t properties = H5P_DEFAULT;
+    if (compression_level > 0) {
+        properties = H5Pcreate(H5P_DATASET_CREATE);
+        if (properties < 0) {
+            warnx
+                ("Failed to create properties structure to write out compressed data structure.\n");
+            properties = H5P_DEFAULT;
+        } else {
+            H5Pset_shuffle(properties);
+            H5Pset_deflate(properties, compression_level);
+            H5Pset_chunk(properties, rank, chunk_size);
+        }
+    }
+    return properties;
+}
+
+
+herr_t write_signal(hid_t root, const float * raw, size_t n,
+                    hsize_t chunk_size, int compression_level){
+    if(root < 0 || NULL == raw){
         return -1;
     }
-    return H5Gclose(group);
+    hsize_t nh = n;
+
+    hid_t space = H5Screate_simple(1, &nh, &nh);
+    hid_t properties = set_compression(1, &chunk_size, compression_level);
+    hid_t dset = H5Dcreate(root, "signal", H5T_IEEE_F32LE, space, H5P_DEFAULT, properties, H5P_DEFAULT);
+    herr_t status = H5Dwrite(dset, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, raw);
+
+    H5Dclose(dset);
+    H5Pclose(properties);
+    H5Sclose(space);
+
+    return status;    
+}
+
+
+herr_t write_trace(hid_t root, const int32_t * trace, size_t nstate, size_t nblk,
+                   hsize_t chunk_size, int compression_level){
+    if(root < 0 || NULL == trace){
+        return -1;
+    }
+    hsize_t nh[2] = {nblk, nstate};
+    hsize_t ch[2] = {chunk_size, nstate};
+
+    hid_t space = H5Screate_simple(2, nh, nh);
+    hid_t properties = set_compression(2, ch, compression_level);
+    hid_t dset = H5Dcreate(root, "trace", H5T_STD_U8LE, space, H5P_DEFAULT, properties, H5P_DEFAULT);
+    herr_t status = H5Dwrite(dset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, trace);
+
+    H5Dclose(dset);
+    H5Pclose(properties);
+    H5Sclose(space);
+    return status;
 }
 
 
@@ -117,7 +198,6 @@ cleanup1:
 }
 
 
-
 fast5_raw_scaling get_raw_scaling(hid_t hdf5file) {
     // Add 1e-5 to sensible sample rate as a sentinel value
     fast5_raw_scaling scaling = { NAN, NAN, NAN, NAN };
@@ -138,6 +218,7 @@ fast5_raw_scaling get_raw_scaling(hid_t hdf5file) {
 
     return scaling;
 }
+
 
 raw_table read_raw(const char *filename, bool scale_to_pA) {
     assert(NULL != filename);
@@ -229,15 +310,9 @@ raw_table read_raw(const char *filename, bool scale_to_pA) {
 }
 
 
-void write_trace(hid_t hdf5file, const char *readname,
-                 const struct _raw_basecall_info res, 
-                 hsize_t chunk_size, int compression_level){
-    return;
-}
-/*
-void write_trace(hid_t hdf5file, const char *readname,
-                 const struct _raw_basecall_info res, 
-                 hsize_t chunk_size, int compression_level){
+void write_summary(hid_t hdf5file, const char *readname,
+                   const struct _raw_basecall_info res,
+                   hsize_t chunk_size, int compression_level){
     assert(compression_level >= 0 && compression_level <= 9);
 
     hid_t read_group = create_group(hdf5file, readname);
@@ -245,59 +320,15 @@ void write_trace(hid_t hdf5file, const char *readname,
         warnx("Failed to create group \"%s\" %s:%d.", readname, __FILE__, __LINE__);
     }
 
-    
+    const size_t nsample = res.rt.end - res.rt.start;
 
-    // Create dataset
-    const hsize_t dims = res.rt.end - res.rt.start;
-    hid_t space = H5Screate_simple(1, &dims, NULL);
-    if (space < 0) {
-        warnx("Failed to allocate dataspace for trace of \"%s\" %s:%d.", 
-              readname, __FILE__, __LINE__);
-        goto clean3;
-    }
+    herr_t status = write_signal(read_group, res.rt.raw + res.rt.start,
+                                 nsample, chunk_size, compression_level);
 
+    herr_t status2 = write_trace(read_group, res.trace->data.f, res.trace->nr, res.trace->nc,
+                                 chunk_size, compression_level);
 
-    // Enable compression if available
-    hid_t properties = H5P_DEFAULT;
-    if (compression_level > 0) {
-        properties = H5Pcreate(H5P_DATASET_CREATE);
-        if (properties < 0) {
-            warnx
-                ("Failed to create properties structure to write out compressed data structure.\n");
-            properties = H5P_DEFAULT;
-        } else {
-            H5Pset_shuffle(properties);
-            H5Pset_deflate(properties, compression_level);
-            H5Pset_chunk(properties, 1, &chunk_size);
-        }
-    }
-
-    char * dset_name = malloc(strlen(readname) + );
-    hid_t dset = H5Dcreate(hdf5file, readname, filetype, space,
-                           H5P_DEFAULT, properties, H5P_DEFAULT);
-    if (dset < 0) {
-        warnx("Failed to create dataset for trace of \"%s\"  %s:%d.",
-              readname, __FILE__, __LINE__);
-        goto clean4;
-    }
-
-    // Write data
-    herr_t writeret =
-        H5Dwrite(dset, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, res.rt.raw + res.rt.start);
-    if (writeret < 0) {
-        warnx("Failed to write trace for \"%s\"  %s:%d.", readname,
-              __FILE__, __LINE__);
-    }
-
-
-    H5Dclose(dset);
-clean4:
-    if (H5P_DEFAULT != properties) {
-        H5Pclose(properties);
-    }
-    H5Sclose(space);
-clean3:
     H5Gclose(read_group);
 
+    return;
 }
-*/

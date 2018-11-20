@@ -1,13 +1,9 @@
 #include <dirent.h>
-#include <fcntl.h>
 #include <glob.h>
 #include <libgen.h>
 #include <math.h>
 #include <stdio.h>
 #include <strings.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
 
 #include "decode.h"
 #include "fast5_interface.h"
@@ -17,6 +13,7 @@
 #include "flappie_licence.h"
 #include "flappie_output.h"
 #include "flappie_stdlib.h"
+#include "flappie_structures.h"
 #include "util.h"
 #include "version.h"
 
@@ -35,7 +32,6 @@ extern const char *argp_program_bug_address;
 static char doc[] = "Flappie basecaller -- basecall from raw signal";
 static char args_doc[] = "fast5 [fast5 ...]";
 static struct argp_option options[] = {
-    //{"dump", 4, "filename", 0, "Dump annotated blocks to HDF5 file"},
     {"format", 'f', "format", 0, "Format to output reads (FASTA or SAM)"},
     {"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)"},
     {"model", 'm', "name", 0, "Model to use (\"help\" to list)"},
@@ -43,6 +39,7 @@ static struct argp_option options[] = {
     {"prefix", 'p', "string", 0, "Prefix to append to name of each read"},
     {"temperature", 7, "factor", 0, "Temperature for weights"},
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
+    {"trace", 'T', "filename", 0, "Dump trace to HDF5 file"},
     {"licence", 10, 0, 0, "Print licensing information"},
     {"license", 11, 0, OPTION_ALIAS, "Print licensing information"},
     {"segmentation", 3, "chunk:percentile", 0, "Chunk size and percentile for variance based segmentation"},
@@ -60,7 +57,7 @@ static struct argp_option options[] = {
 struct arguments {
     int compression_level;
     int compression_chunk_size;
-    char * dump;
+    char * trace;
     enum flappie_outformat_type outformat;
     int limit;
     enum model_type model;
@@ -78,7 +75,7 @@ struct arguments {
 static struct arguments args = {
     .compression_level = 1,
     .compression_chunk_size = 200,
-    .dump = NULL,
+    .trace = NULL,
     .limit = 0,
     .model = FLAPPIE_MODEL_R941_NATIVE,
     .output = NULL,
@@ -108,9 +105,6 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
     char * next_tok = NULL;
 
     switch(key){
-    case 'd':
-        args.dump = arg;
-        break;
     case 'f':
         args.outformat = get_outformat(arg);
         if(FLAPPIE_OUTFORMAT_INVALID == args.outformat){
@@ -152,6 +146,9 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
         }
         assert(args.trim_start >= 0);
         assert(args.trim_end >= 0);
+        break;
+    case 'T':
+        args.trace = arg;
         break;
     case 3:
         args.varseg_chunk = atoi(strtok(arg, ":"));
@@ -244,6 +241,8 @@ static struct _raw_basecall_info calculate_post(char * filename, enum model_type
         quality[i] = phredf(expf(qpath[idx]));
     }
 
+    exp_activation_inplace(posterior);
+    flappie_imatrix trace = trace_from_posterior(posterior);
     posterior = free_flappie_matrix(posterior);
     free(qpath);
     free(path_idx);
@@ -257,8 +256,8 @@ static struct _raw_basecall_info calculate_post(char * filename, enum model_type
         .basecall = basecall,
         .quality = quality,
         .basecall_length = basecall_length,
-        .pos = pos,
-        .nblock = nblock};
+        .trace = trace,
+        .pos = pos};
 }
 
 
@@ -268,21 +267,7 @@ int main(int argc, char * argv[]){
         args.output = stdout;
     }
 
-    hid_t hdf5out = -1;
-    if (NULL != args.dump) {
-        int fd = open(args.dump, O_CREAT | O_WRONLY | O_EXCL, S_IRUSR | S_IWUSR);
-        if(fd < 0){
-            hdf5out = H5Fopen(args.dump, H5F_ACC_RDWR, H5P_DEFAULT);
-        } else {
-            close(fd);
-            unlink(args.dump);
-            hdf5out = H5Fcreate(args.dump, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-        }
-        if (hdf5out < 0){
-            warnx("Failed to create \"%s\" for dumping.\n", args.dump);
-            args.dump = NULL;
-        }
-    }
+    hid_t hdf5out = open_or_create_hdf5(args.trace);
 
 
     int nfile = 0;
@@ -337,16 +322,11 @@ int main(int argc, char * argv[]){
             fprintf_format(args.outformat, args.output, res.rt.uuid, 
                            basename(filename), args.uuid, args.prefix, res);
 
-            write_trace(hdf5out, basename(filename), res,
-                        args.compression_chunk_size,
-                        args.compression_level);
+            write_summary(hdf5out, args.uuid ? res.rt.uuid : basename(filename), res,
+                          args.compression_chunk_size, args.compression_level);
 
 
-            free(res.rt.raw);
-            free(res.rt.uuid);
-            free(res.basecall);
-            free(res.quality);
-            free(res.pos);
+            free_raw_basecall_info(&res);
         }
         globfree(&globbuf);
     }
