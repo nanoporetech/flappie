@@ -420,7 +420,7 @@ void log_row_normalise_inplace(flappie_matrix C){
         for(size_t row=1 ; row < C->nr ; row++){
             row_logsum = logsumexpf(row_logsum, C->data.f[offset + row]);
         }
-        row_logsum /= C->nr;
+
         for(size_t row=0 ; row < C->nr ; row++){
             C->data.f[offset + row] -= row_logsum;
         }
