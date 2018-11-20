@@ -45,6 +45,8 @@ On Debian based systems, the following packages are sufficient (tested Ubuntu 14
 ## Usage
 
 ```bash
+#  ! It is highly recommended that OpenBLAS is run in single threaded mode
+export OPENBLAS_NUM_THREADS=1
 #  List available models
 build/flappie --model help
 #  Basecall reads directory
