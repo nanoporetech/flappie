@@ -81,8 +81,9 @@ The models contained contained in Flappie are trained using data from the MinION
 Use on other platforms is not supported, although they may generalise to reads from the 
 GridION platform due to the similarity of the hardware.
 ###  Methylation and other modifications
-Flappie currently only calls 5mC methylation in CpG contexts.  Calling other modifications and 5mC is not currently supported.
-
+Flappie currently only calls 5mC methylation in CpG contexts.  Calling other modifications and 5mC is not currently supported.  Methylated calls are currently represented as a 'Z' base in the output
+### Trace file
+The trace information is output as a block x state matrix, where the states are the flip (uppercase) and flop (lowercase) bases in the order ACGTacgt or ACGTZacgtz for methylated calls.  The probabilities for each state are normalised into the range 0..255 and then represented by an unsigned 8bit integer.  Due to rounding, the sum of encoded probabilities for each blcok may not equal 255.
 
 ## Abbreviations
 
