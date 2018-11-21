@@ -83,16 +83,38 @@ under the 'zlib' licence.  See the top of [src/sse_mathfun.h](src/sse_mathfun.h)
 
 ## FAQs
 
+###  Compilation failures
+
+####  Git LFS missing
+If you encounter compilation failures of the following form, the repository was cloned without [git lfs](https://git-lfs.github.com/) and the models files are missing.
+```
+/home/ubuntu/mounted/extensionBonusFlappie/flappie/src/models/flipflop_r941native.h:1:1: error: unknown type name ‘version’
+version https://git-lfs.github.com/spec/v1
+^~~~~~~
+/home/ubuntu/mounted/extensionBonusFlappie/flappie/src/models/flipflop_r941native.h:1:14: error: expected ‘=’, ‘,’, ‘;’, ‘asm’ or ‘__attribute__’ before ‘:’ token
+version https://git-lfs.github.com/spec/v1
+              ^
+/home/ubuntu/mounted/extensionBonusFlappie/flappie/src/models/flipflop_r941native.h:2:12: error: invalid suffix "fa49fa0ea6c67806f69fd6ba42a7dd935390b86f98a615ee03e167d22583" on integer constant
+oid sha256:3979fa49fa0ea6c67806f69fd6ba42a7dd935390b86f98a615ee03e167d22583
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /home/ubuntu/mounted/extensionBonusFlappie/flappie/src/networks.c:4:0:
+/home/ubuntu/mounted/extensionBonusFlappie/flappie/src/models/flipflop_r10Cpcr.h:2:12: error: invalid suffix "b2fe5fd1c3d9646e7a6ea76e646beb50ad6a5fe17e5da0c76c13bd907cb4" on floating constant
+oid sha256:83e2b2fe5fd1c3d9646e7a6ea76e646beb50ad6a5fe17e5da0c76c13bd907cb4
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
+###  Methylation and other modifications
+Flappie currently only calls 5mC methylation in CpG contexts.  Calling other modifications and 5mC is not currently supported.  Methylated calls are currently represented as a 'Z' base in the output
+
 ###  Platform support
 The models contained contained in Flappie are trained using data from the MinION platform.  
 Use on other platforms is not supported, although they may generalise to reads from the 
 GridION platform due to the similarity of the hardware.
-###  Methylation and other modifications
-Flappie currently only calls 5mC methylation in CpG contexts.  Calling other modifications and 5mC is not currently supported.  Methylated calls are currently represented as a 'Z' base in the output
-### Trace file
-The trace information is output as a block x state matrix, where the states are the flip (uppercase) and flop (lowercase) bases in the order ACGTacgt or ACGTZacgtz for methylated calls.  The probabilities for each state are normalised into the range 0..255 and then represented by an unsigned 8bit integer.  Due to rounding, the sum of encoded probabilities for each blcok may not equal 255.
+
 ### Quality scores
 The quality currently produced for FASTQ and SAM output are derived directly from the probabilistic model output by the _Flappie_ model and have not been calibrated.
+
+### Trace file
+The trace information is output as a block x state matrix, where the states are the flip (uppercase) and flop (lowercase) bases in the order ACGTacgt or ACGTZacgtz for methylated calls.  The probabilities for each state are normalised into the range 0..255 and then represented by an unsigned 8bit integer.  Due to rounding, the sum of encoded probabilities for each blcok may not equal 255.
 
 ## Abbreviations
 
