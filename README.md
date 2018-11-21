@@ -102,6 +102,15 @@ In file included from /home/ubuntu/mounted/extensionBonusFlappie/flappie/src/net
 oid sha256:83e2b2fe5fd1c3d9646e7a6ea76e646beb50ad6a5fe17e5da0c76c13bd907cb4
             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ```
+
+###  Installing `git-lfs`
+From [git lfs](https://git-lfs.github.com/), the installation instructions for Debian bases systems, like Ubuntu, are: 
+```bash Ubuntu
+curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+sudo apt-get install git-lfs
+git lfs install
+```
+
 ###  Methylation and other modifications
 Flappie currently only calls 5mC methylation in CpG contexts.  Calling other modifications and 5mC is not currently supported.  Methylated calls are currently represented as a 'Z' base in the output
 
