@@ -21,6 +21,8 @@ Basecall Fast5 reads using _flip-flop_ basecalling.
 ## Installation
 Flappie has been tested on Ubuntu 16.04.5 LTS.  Other systems may be compatible.
 
+Flappie models and other large resources are stored using [git lfs](https://git-lfs.github.com/) and this extension must be install to successfully clone the repository.
+
 ```bash
 git clone https://github.com/nanoporetech/flappie
 cd flappie
