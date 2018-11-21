@@ -19,6 +19,7 @@ Basecall Fast5 reads using _flip-flop_ basecalling.
 ## Input and Output
 
 ## Installation
+Flappie has been tested on Ubuntu 16.04.5 LTS.  Other systems may be compatible.
 
 ```bash
 git clone https://github.com/nanoporetech/flappie
@@ -48,27 +49,29 @@ On Debian based systems, the following packages are sufficient (tested Ubuntu 14
 #  ! It is highly recommended that OpenBLAS is run in single threaded mode
 export OPENBLAS_NUM_THREADS=1
 #  List available models
-build/flappie --model help
+flappie --model help
 #  Basecall reads directory
-build/flappie reads/ > basecalls.fq
+flappie reads/ > basecalls.fq
 #  Basecall using a different model
-build/flappie --model r941_5mC reads/ > basecalls.fq
+flappie --model r941_5mC reads/ > basecalls.fq
 #  Output to SAM
-build/flappie --format sam reads/ > basecalls.sam
+flappie --format sam reads/ > basecalls.sam
 #  Output to BAM
-build/flappie --format sam reads | samtools samtools view -Sb - > basecalls.bam
+flappie --format sam reads | samtools view -Sb - > basecalls.bam
 #  Dump trace data
-build/flappie --trace trace.hdf5 reads > basecalls.fq
+flappie --trace trace.hdf5 reads > basecalls.fq
 #  Basecall in parallel
-find reads -name \*.fast5 | xargs -P $(nproc) -X build/flappie > basecalls.fq
+find reads -name \*.fast5 | parallel -P $(nproc) -X flappie > basecalls.fq
 #  Dump trace in parallel.  One trace per parallel process.
-find reads -name \*.fast5 | xargs -P $(nproc) -X build/flappie --trace trace_{%}.hdf5 {} > basecalls.fq
+find reads -name \*.fast5 | parallel -P $(nproc) -X flappie --trace trace_{%}.hdf5 {} > basecalls.fq
 ```
 
 # Help
 
 ## Licence and Copyright
 (c) 2018 Oxford Nanopore Technologies Ltd.
+
+Flappie is distributed under the terms of the Oxford Nanopore Technologies Developer licence.
 
 
 The vectorised math functions used by Flappie [src/sse_mathfun.h](src/sse_mathfun.h) are from
@@ -86,6 +89,8 @@ GridION platform due to the similarity of the hardware.
 Flappie currently only calls 5mC methylation in CpG contexts.  Calling other modifications and 5mC is not currently supported.  Methylated calls are currently represented as a 'Z' base in the output
 ### Trace file
 The trace information is output as a block x state matrix, where the states are the flip (uppercase) and flop (lowercase) bases in the order ACGTacgt or ACGTZacgtz for methylated calls.  The probabilities for each state are normalised into the range 0..255 and then represented by an unsigned 8bit integer.  Due to rounding, the sum of encoded probabilities for each blcok may not equal 255.
+### Quality scores
+The quality currently produced for FASTQ and SAM output are derived directly from the probabilistic model output by the _Flappie_ model and have not been calibrated.
 
 ## Abbreviations
 
