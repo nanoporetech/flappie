@@ -1,9 +1,10 @@
 buildDir ?= build
 releaseType ?= Release
 
-.PHONY: all flappie
+.PHONY: all
 all: flappie
 flappie: ${buildDir}/flappie
+	cp ${buildDir}/flappie flappie
 
 ${buildDir}:
 	mkdir ${buildDir}
@@ -15,7 +16,7 @@ test: ${buildDir}/flappie
 
 .PHONY: clean
 clean:
-	rm -rf ${buildDir}
+	rm -rf ${buildDir} flappie
 
 ${buildDir}/flappie: ${buildDir}
 	cd ${buildDir} && \
