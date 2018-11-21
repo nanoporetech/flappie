@@ -314,6 +314,9 @@ void write_summary(hid_t hdf5file, const char *readname,
                    const struct _raw_basecall_info res,
                    hsize_t chunk_size, int compression_level){
     assert(compression_level >= 0 && compression_level <= 9);
+    if(hdf5file < 0){
+        return;
+    }
 
     hid_t read_group = create_group(hdf5file, readname);
     if(read_group < 0){
