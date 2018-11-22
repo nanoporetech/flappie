@@ -103,6 +103,10 @@ oid sha256:83e2b2fe5fd1c3d9646e7a6ea76e646beb50ad6a5fe17e5da0c76c13bd907cb4
             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ```
 
+###  High system load
+Extremely high system load can arise when Flappie is run using `parallel` and OpenBLAS is used in multi-threaded mode.  Running in this manner is harmful to overall throughput and it is recommended that OpenBLAS is used in single-threaded manner, which can be enable by setting the `OPENBLAS_NUM_THREADS` environmental variable to 1 (see top of [Usage](#usage) for an example of how to do this).
+
+
 ###  Installing `git-lfs`
 From [git lfs](https://git-lfs.github.com/), the installation instructions for Debian based systems, like Ubuntu, are: 
 ```bash Ubuntu
