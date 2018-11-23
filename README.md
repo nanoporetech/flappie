@@ -31,18 +31,22 @@ make flappie
 
 ### Compilation From Source
 Flappie has the following dependences
+* [Cmake](https://cmake.org/) for building
 * [CUnit](http://cunit.sourceforge.net/) library for unit testing
 * [HDF5](https://www.hdfgroup.org/) library
 * [OpenBLAS](https://www.openblas.net/) library for linear algebra
 
 
 On Debian based systems, the following packages are sufficient (tested Ubuntu 14.04 and 16.04)
-* libcunit1
-* libcunit1-dev
-* libhdf5
-* libhdf5-dev
-* libopenblas-base
-* libopenblas-dev
+* Running
+  * libcunit1
+  * libhdf5
+  * libopenblas-base
+* Building
+  * cmake
+  * libcunit1-dev
+  * libhdf5-dev
+  * libopenblas-dev
 
 
 ## Usage
