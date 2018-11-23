@@ -225,7 +225,7 @@ static struct _raw_basecall_info calculate_post(char * filename, enum model_type
     }
 
     const size_t nbase = nbase_from_flipflop_nparam(trans_weights->nr);
-    const int nblock = trans_weights->nc;
+    const size_t nblock = trans_weights->nc;
     int * path = calloc(nblock + 2, sizeof(int));
     int * path_idx = calloc(nblock + 2, sizeof(int));
     float * qpath = calloc(nblock + 2, sizeof(float));

@@ -10,18 +10,16 @@ float argmax_decoder(const_flappie_matrix logpost, int *seq) {
     RETURN_NULL_IF(NULL == logpost, NAN);
     RETURN_NULL_IF(NULL == seq, NAN);
 
-    const int nblock = logpost->nc;
-    const int nstate = logpost->nr;
+    const size_t nblock = logpost->nc;
+    const size_t nstate = logpost->nr;
     assert(nstate > 0);
-    const int stride = logpost->stride;
+    const size_t stride = logpost->stride;
     assert(stride > 0);
-    int offset;
 
     float logscore = 0;
-    int imax;
-    for (int blk = 0; blk < nblock; blk++) {
-        offset = blk * stride;
-        imax = argmaxf(logpost->data.f + offset, nstate);
+    for (size_t blk = 0; blk < nblock; blk++) {
+        const size_t offset = blk * stride;
+        const int imax = argmaxf(logpost->data.f + offset, nstate);
         logscore += logpost->data.f[offset + imax];
         seq[blk] = (imax == nstate - 1) ? -1 : imax;
     }
