@@ -53,6 +53,7 @@ static struct argp_option options[] = {
 };
 
 
+#define DEFAULT_MODEL FLAPPIE_MODEL_R941_NATIVE
 
 struct arguments {
     int compression_level;
@@ -77,7 +78,7 @@ static struct arguments args = {
     .compression_chunk_size = 200,
     .trace = NULL,
     .limit = 0,
-    .model = FLAPPIE_MODEL_R941_NATIVE,
+    .model = DEFAULT_MODEL,
     .output = NULL,
     .outformat = FLAPPIE_OUTFORMAT_FASTQ,
     .prefix = "",
@@ -90,15 +91,18 @@ static struct arguments args = {
     .uuid = false
 };
 
-void fprint_flappie_models(FILE * fh){
+
+void fprint_flappie_models(FILE * fh, enum model_type default_model){
     if(NULL == fh){
         return;
     }
 
     for(size_t mdl=0 ; mdl < flappie_nmodel ; mdl++){
-        fprintf(fh, "%10s : %s\n", flappie_model_string(mdl), flappie_model_description(mdl));
+        fprintf(fh, "%10s : %s  %s\n", flappie_model_string(mdl), flappie_model_description(mdl),
+                                      (default_model == mdl) ? "(default)" : "");
     }
 }
+
 
 static error_t parse_arg(int key, char * arg, struct  argp_state * state){
     int ret = 0;
@@ -117,13 +121,13 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
         break;
     case 'm':
         if(0 == strcasecmp(arg, "help")){
-            fprint_flappie_models(stdout);
+            fprint_flappie_models(stdout, DEFAULT_MODEL);
             exit(EXIT_SUCCESS);
         }
         args.model = get_flappie_model_type(arg);
         if(FLAPPIE_MODEL_INVALID == args.model){
             fprintf(stdout, "Invalid Flappie model \"%s\".\n", arg);
-            fprint_flappie_models(stdout);
+            fprint_flappie_models(stdout, DEFAULT_MODEL);
             exit(EXIT_FAILURE);
         }
         break;
