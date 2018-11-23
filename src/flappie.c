@@ -88,7 +88,7 @@ static struct arguments args = {
     .varseg_chunk = 100,
     .varseg_thresh = 0.0f,
     .files = NULL,
-    .uuid = false
+    .uuid = true
 };
 
 
