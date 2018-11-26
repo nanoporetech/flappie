@@ -45,7 +45,7 @@ const char *flappie_model_description(const enum model_type model){
     case FLAPPIE_MODEL_R941_NATIVE:
         return "R9.4.1 model for MinION.  Trained from native DNA library";
     case FLAPPIE_MODEL_R941_5mC:
-        return "R9.4.1 model for MinION; 5mC aware.  Trained from native NA12878 library";
+        return "R9.4.1 model for PromethION; 5mC aware.  Trained from native NA12878 library";
     case FLAPPIE_MODEL_R10C_PCR:
         return "R10C model for MinION.  Trained from PCR'd DNA library";
     case FLAPPIE_MODEL_INVALID:
