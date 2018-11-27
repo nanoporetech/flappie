@@ -85,14 +85,30 @@ int printf_format(enum flappie_outformat_type outformat,
 }
 
 
+void fprint_string(FILE * fp, const char * str, bool newline){
+    if(NULL ==fp || NULL == str){
+        return;
+    }
+    while('\0' != *str){
+        fputc(*str, fp);
+        str++;
+    }
+    if(newline){
+        fputc('\n', fp);
+    }
+}
+
+
 int fprintf_fasta(FILE * fp, const char * uuid, const char *readname,
                   bool uuid_primary, const char * prefix,
                   const struct _raw_basecall_info res) {
-    return fprintf(fp, ">%s%s  { \"filename\" : \"%s\", \"uuid\" : \"%s\", \"normalised_score\" : %f,  \"nblock\" : %zu,  \"sequence_length\" : %zu,  \"blocks_per_base\" : %f, \"nsample\" : %zu, \"trim\" : [ %zu, %zu ] }\n%s\n",
+    fprintf(fp, ">%s%s  { \"filename\" : \"%s\", \"uuid\" : \"%s\", \"normalised_score\" : %f,  \"nblock\" : %zu,  \"sequence_length\" : %zu,  \"blocks_per_base\" : %f, \"nsample\" : %zu, \"trim\" : [ %zu, %zu ] }\n",
                    prefix, uuid_primary ? uuid : readname, readname, uuid, 
                    -res.score / res.nblock, res.nblock, res.basecall_length,
                    (float)res.nblock / (float)res.basecall_length,
-                   res.rt.n, res.rt.start, res.rt.end, res.basecall);
+                   res.rt.n, res.rt.start, res.rt.end);
+    fprint_string(fp, res.basecall, true);
+    fflush(fp);
 }
 
 
@@ -103,18 +119,25 @@ int fprintf_fastq(FILE * fp, const char * uuid, const char *readname,
         warnx("Can't output fastq for reads without quality values");
         return -1;
     }
-    return fprintf(fp, "@%s%s  { \"filename\" : \"%s\", \"uuid\" : \"%s\", \"normalised_score\" : %f,  \"nblock\" : %zu,  \"sequence_length\" : %zu,  \"blocks_per_base\" : %f, \"nsample\" : %zu, \"trim\" : [ %zu, %zu ] }\n%s\n+\n%s\n",
+    fprintf(fp, "@%s%s  { \"filename\" : \"%s\", \"uuid\" : \"%s\", \"normalised_score\" : %f,  \"nblock\" : %zu,  \"sequence_length\" : %zu,  \"blocks_per_base\" : %f, \"nsample\" : %zu, \"trim\" : [ %zu, %zu ] }\n",
                    prefix, uuid_primary ? uuid : readname, readname, uuid, 
                    -res.score / res.nblock, res.nblock, res.basecall_length,
                    (float)res.nblock / (float)res.basecall_length,
-                   res.rt.n, res.rt.start, res.rt.end, res.basecall, res.quality);
+                   res.rt.n, res.rt.start, res.rt.end);
+    fprint_string(fp, res.basecall, true);
+    fputs("+\n", fp);
+    fprint_string(fp, res.quality, true);
+    fflush(fp);
 }
 
 
 int fprintf_sam(FILE * fp,  const char * uuid, const char *readname,
                 bool uuid_primary, const char * prefix,
                 const struct _raw_basecall_info res) {
-    return fprintf(fp, "%s%s\t4\t*\t0\t0\t*\t*\t0\t0\t%s\t%s\n", prefix,
+    fprintf(fp, "%s%s\t4\t*\t0\t0\t*\t*\t0\t0\t%s\t%s\n", prefix,
                    uuid_primary ? uuid : readname, res.basecall, res.quality ? res.quality : "");
+    fprint_string(fp, res.basecall, false);
+    fputc('\t', fp);
+    fprint_string(fp, res.quality, true);
+    fflush(fp);
 }
-
