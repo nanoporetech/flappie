@@ -12,7 +12,7 @@ Basecall Fast5 reads using _flip-flop_ basecalling.
 * Flip-flop basecalling for the MinION platform
   * R9.4.1 (Native or PCR libraries)
   * R10C (PCR libraries only)
-* Basecalling of 5mC in CpG context for R9.4.1
+* Basecalling of 5mC in CpG context for R9.4.1, PromethION platform
 
 # Getting Started
 
