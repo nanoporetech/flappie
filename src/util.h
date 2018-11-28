@@ -186,27 +186,34 @@ static inline double logsumexp(double x, double y){
 }
 
 
+#define MAX_POST_PROB 0.99999
 static inline float qscoref(float p){
     assert(p >= 0.0f && p <=1.0f);
-    return -(10.0f * M_LOG10E) * log1pf(-p);
+    const float p_clip = (p < MAX_POST_PROB) ? p : MAX_POST_PROB;
+    return -(10.0f * M_LOG10E) * log1pf(-p_clip);
 }
 
 
 static inline double qscore(double p){
     assert(p >= 0.0 && p <=1.0);
-    return -(10.0 * M_LOG10E) * log1p(-p);
+    const float p_clip = (p < MAX_POST_PROB) ? p : MAX_POST_PROB;
+    return -(10.0 * M_LOG10E) * log1p(-p_clip);
 }
 
 
 static inline char phredf(float p){
     char ph = roundf(33.0f + qscoref(p));
-    return (ph < 126) ? ph : 126;
+    char ph_clip = (ph < 126) ? ph : 126;
+    assert(ph_clip > 32 && ph_clip < 127);
+    return ph_clip;
 }
 
 
 static inline char phred(float p){
     char ph = round(33.0 + qscore(p));
-    return (ph < 126) ? ph : 126;
+    char ph_clip = (ph < 126) ? ph : 126;
+    assert(ph_clip > 32 && ph_clip < 127);
+    return ph_clip;
 }
 
 

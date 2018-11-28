@@ -16,26 +16,26 @@ enum flappie_outformat_type get_outformat(const char * formatstr);
 const char * flappie_outformat_string(enum flappie_outformat_type format);
 
 
-int printf_format(enum flappie_outformat_type outformat, 
-                  const char * uuid, const char *readname,
-                  bool uuid_primary, const char * prefix,
-                  const struct _raw_basecall_info res);
-
-int fprintf_format(enum flappie_outformat_type outformat, FILE * fp,
+void printf_format(enum flappie_outformat_type outformat,
                    const char * uuid, const char *readname,
                    bool uuid_primary, const char * prefix,
                    const struct _raw_basecall_info res);
 
-int fprintf_fasta(FILE * fp, const char * uuid, const char *readname,
-                  bool uuid_primary, const char * prefix,
-                  const struct _raw_basecall_info res);
+void fprintf_format(enum flappie_outformat_type outformat, FILE * fp,
+                    const char * uuid, const char *readname,
+                    bool uuid_primary, const char * prefix,
+                    const struct _raw_basecall_info res);
 
-int fprintf_fastq(FILE * fp, const char * uuid, const char *readname,
-                  bool uuid_primary, const char * prefix,
-                  const struct _raw_basecall_info res);
+void fprintf_fasta(FILE * fp, const char * uuid, const char *readname,
+                   bool uuid_primary, const char * prefix,
+                   const struct _raw_basecall_info res);
 
-int fprintf_sam(FILE * fp,  const char * uuid, const char *readname,
-                bool uuid_primary, const char * prefix,
-                const struct _raw_basecall_info res);
+void fprintf_fastq(FILE * fp, const char * uuid, const char *readname,
+                   bool uuid_primary, const char * prefix,
+                   const struct _raw_basecall_info res);
+
+void fprintf_sam(FILE * fp,  const char * uuid, const char *readname,
+                 bool uuid_primary, const char * prefix,
+                 const struct _raw_basecall_info res);
 
 #endif /* FLAPPIE_OUTPUT_H */
