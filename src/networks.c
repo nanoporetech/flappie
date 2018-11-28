@@ -1,3 +1,11 @@
+/*  Copyright 2018 Oxford Nanopore Technologies, Ltd */
+
+/*  This Source Code Form is subject to the terms of the Oxford Nanopore
+ *  Technologies, Ltd. License, v. 1.0. If a copy of the License was not
+ *  distributed with this file, You can obtain one at
+ *  http://nanoporetech.com
+ */
+
 #include "layers.h"
 #include "models/flipflop_r941native.h"
 #include "models/flipflop_r941native5mC.h"

@@ -1,3 +1,11 @@
+/*  Copyright 2018 Oxford Nanopore Technologies, Ltd */
+
+/*  This Source Code Form is subject to the terms of the Oxford Nanopore
+ *  Technologies, Ltd. License, v. 1.0. If a copy of the License was not
+ *  distributed with this file, You can obtain one at
+ *  http://nanoporetech.com
+ */
+
 // fast5_interface needs cleaning
 #define BANANA 1
 #define _C99_SOURCE  // Required for snprintf on Mac (not set by clang -std=c99)
