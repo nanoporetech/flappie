@@ -94,7 +94,7 @@ void colmaxf(float * x, int nr, int nc, int * idx){
 
 
 inline size_t trans_lookup(size_t from, size_t to, size_t nbase){
-    assert(nbase > = 0);
+    assert(nbase >= 0);
     assert(from >= 0 && from < nbase + nbase);
     assert(to >= 0 && to < nbase + nbase);
     assert(to < nbase || ((to % nbase) == (from % nbase)));
@@ -492,7 +492,7 @@ flappie_imatrix trace_from_posterior(const flappie_matrix tpost){
     RETURN_NULL_IF(NULL == tpost, NULL);
     const size_t nbase = nbase_from_flipflop_nparam(tpost->nr);
     const size_t nstate = nbase + nbase;
-    assert((nbase + 1) * nstate == tpost->nc);
+    assert((nbase + 1) * nstate == tpost->nr);
 
 
     flappie_imatrix trace = make_flappie_imatrix(nstate, tpost->nc + 1);
