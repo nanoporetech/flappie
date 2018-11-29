@@ -151,7 +151,9 @@ representation of modifications as it may change in the future.
 Particularly, the `SAM` output when modification calling is enabled does
 not conform to the published specification for that for format.
 
-See #11 and samtools/hts-specs#32 for more details of the issues involved.
+See https://github.com/nanoporetech/flappie/issues/11 and
+https://github.com/samtools/hts-specs/issues/362 for more details of the issues
+involved.
 
 
 ###  Platform support
