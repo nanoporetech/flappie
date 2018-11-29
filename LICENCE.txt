@@ -78,9 +78,9 @@ Oxford Nanopore Technologies, Ltd. Public License Version 1.0
 Each Contributor hereby grants You a world-wide, royalty-free,
 non-exclusive license under Contributor copyrights Licensable by such
 Contributor to use, reproduce, make available, modify, display,
-perform, distribute, and otherwise exploit its Contributions, either
-on an unmodified basis, with Modifications, or as part of a Larger
-Work.
+perform, distribute, and otherwise exploit solely for Research Purposes
+its Contributions, either on an unmodified basis, with Modifications, 
+or as part of a Larger Work.
 
 2.2. Effective Date
 
@@ -158,22 +158,14 @@ If You distribute Covered Software in Executable Form then:
     than the cost of distribution to the recipient; and
 
 (b) You may distribute such Executable Form under the terms of this
-    License, or sublicense it under different terms, provided that the
-    license for the Executable Form does not attempt to limit or alter
-    the recipients’ rights in the Source Code Form under this License.
+    License.
 
 3.3. Distribution of a Larger Work
 
 You may create and distribute a Larger Work under terms of Your choice,
 provided that You also comply with the requirements of this License for
-the Covered Software. If the Larger Work is a combination of Covered
-Software with a work governed by one or more Secondary Licenses, and the
-Covered Software is not Incompatible With Secondary Licenses, this
-License permits You to additionally distribute such Covered Software
-under the terms of such Secondary License(s), so that the recipient of
-the Larger Work may, at their option, further distribute the Covered
-Software under the terms of either this License or such Secondary
-License(s).
+the Covered Software. The Larger Work may not be a combination of Covered
+Software with a work governed by one or more Secondary Licenses.
 
 3.4. Notices
 
@@ -185,16 +177,15 @@ the extent required to remedy known factual inaccuracies.
 
 3.5. Application of Additional Terms
 
-You may choose to offer, and to charge a fee for, warranty, support,
-indemnity or liability obligations to one or more recipients of Covered
-Software. However, You may do so only on Your own behalf, and not on
-behalf of any Contributor. You must make it absolutely clear that any
-such warranty, support, indemnity, or liability obligation is offered by
-You alone, and You hereby agree to indemnify every Contributor for any
-liability incurred by such Contributor as a result of warranty, support,
-indemnity or liability terms You offer. You may include additional
-disclaimers of warranty and limitations of liability specific to any
-jurisdiction.
+You may not choose to offer, or charge a fee for use of the Covered
+Software or a fee for, warranty, support, indemnity or liability
+obligations to one or more recipients of Covered Software.  You must
+make it absolutely clear that any such warranty, support, indemnity, or
+liability obligation is offered by You alone, and You hereby agree to
+indemnify every Contributor for any liability incurred by such
+Contributor as a result of warranty, support, indemnity or liability
+terms You offer. You may include additional disclaimers of warranty and
+limitations of liability specific to any jurisdiction.
 
 4. Inability to Comply Due to Statute or Regulation
 ---------------------------------------------------
@@ -213,20 +204,9 @@ recipient of ordinary skill to be able to understand it.
 --------------
 
 5.1. The rights granted under this License will terminate automatically
-if You fail to comply with any of its terms. However, if You become
-compliant, then the rights granted under this License from a particular
-Contributor are reinstated (a) provisionally, unless and until such
-Contributor explicitly and finally terminates Your grants, and (b) on an
-ongoing basis, if such Contributor fails to notify You of the
-non-compliance by some reasonable means prior to 60 days after You have
-come back into compliance. Moreover, Your grants from a particular
-Contributor are reinstated on an ongoing basis if such Contributor
-notifies You of the non-compliance by some reasonable means, this is the
-first time You have received notice of non-compliance with this License
-from such Contributor, and You become compliant prior to 30 days after
-Your receipt of the notice.
+if You fail to comply with any of its terms.
 
-5.2. If You initiate litigation against any entity by asserting a
+5.2. If You initiate litigation against any entity by asserting an
 infringement claim (excluding declaratory judgment actions,
 counter-claims, and cross-claims) alleging that a Contributor Version
 directly or indirectly infringes, then the rights granted to
@@ -331,9 +311,9 @@ Exhibit A - Source Code Form License Notice
 -------------------------------------------
 
   This Source Code Form is subject to the terms of the Oxford Nanopore
-  Technologies, Ltd. Public License, v. 1.0. If a copy of the License 
-  was not distributed with this file, You can obtain one at
-  http://nanoporetech.com
+  Technologies, Ltd. Public License, v. 1.0.  Full licence can be found
+  at
+  https://github.com/nanoporetech/flappie/blob/master/LICENCE.txt
 
 If it is not possible or desirable to put the notice in a particular
 file, then You may include the notice in a location (such as a LICENSE
