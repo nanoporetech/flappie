@@ -78,8 +78,8 @@ find reads -name \*.fast5 | parallel -P $(nproc) -X flappie --trace trace_{%}.hd
 (c) 2018 Oxford Nanopore Technologies Ltd.
 
 Flappie is distributed under the terms of the Oxford Nanopore Technologies, Ltd. 
-License, v. 1.0.  If a copy of the License was not distributed with this file, 
-You can obtain one at http://nanoporetech.com
+Public License, v. 1.0.  If a copy of the License was not distributed with this 
+file, You can obtain one at http://nanoporetech.com
 
 
 

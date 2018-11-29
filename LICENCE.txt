@@ -331,8 +331,8 @@ Exhibit A - Source Code Form License Notice
 -------------------------------------------
 
   This Source Code Form is subject to the terms of the Oxford Nanopore
-  Technologies, Ltd. License, v. 1.0. If a copy of the License was not
-  distributed with this file, You can obtain one at
+  Technologies, Ltd. Public License, v. 1.0. If a copy of the License 
+  was not distributed with this file, You can obtain one at
   http://nanoporetech.com
 
 If it is not possible or desirable to put the notice in a particular
