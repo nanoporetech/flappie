@@ -188,7 +188,7 @@ char * read_string_attribute(hid_t group, const char * attribute){
     } else {
         // Fixed length
         size_t asize = H5Tget_size(atype);
-        str = calloc(asize, sizeof(char));
+        str = calloc(asize + 1, sizeof(char));
         herr_t err = H5Aread(attr, atype, str);
         if(err < 0){
             warnx("Failed to copy attribute '%s'.", attribute);
