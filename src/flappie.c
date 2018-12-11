@@ -269,7 +269,8 @@ static struct _raw_basecall_info calculate_post(char * filename, enum model_type
         .quality = quality,
         .basecall_length = basecall_length,
         .trace = trace,
-        .pos = pos};
+        .pos = pos,
+        .nblock = nblock};
 }
 
 
