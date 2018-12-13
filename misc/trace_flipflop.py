@@ -99,6 +99,8 @@ colour_scheme = { 'default' :
                           { 'A' : 'green', 'C' : 'blue', 'G' : 'orange', 'T' : 'red'},
                   'friendly' : # http://jfly.iam.u-tokyo.ac.jp/color/#pallet
                           { 'A' : '#003c32', 'C' : '#002d46', 'G' : 'grey', 'T' : '#502800'},
+                  'gringer' :
+                          { 'A' : '#006400', 'C' : '#0000ff', 'G' : '#ffd700', 'T' : '#ff6347'},
                   'traditional' : 
                           { 'A' : 'green', 'C' : 'blue', 'G' : 'grey', 'T' : 'red'}}
 
