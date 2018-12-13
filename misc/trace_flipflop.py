@@ -94,8 +94,17 @@ class Maybe(object):
         return res
 
 
+BASE = "ACGT"
+colour_scheme = { 'default' :
+                          { 'A' : 'green', 'C' : 'blue', 'G' : 'orange', 'T' : 'red'},
+                  'friendly' : # http://jfly.iam.u-tokyo.ac.jp/color/#pallet
+                          { 'A' : '#003c32', 'C' : '#002d46', 'G' : 'grey', 'T' : '#502800'},
+                  'traditional' : 
+                          { 'A' : 'green', 'C' : 'blue', 'G' : 'grey', 'T' : 'red'}}
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--colours', default='default', choices=list(colour_scheme.keys()),
+                    help='Change trace colour scheme')
 parser.add_argument('--depop', default=None, metavar='threshold',
                     type=Maybe(Positive(float)), help='Filter pops from signal')
 parser.add_argument('--limit', default=10, type=Maybe(int))
@@ -103,11 +112,6 @@ parser.add_argument('--flipflops', default=False, action=AutoBool,
                     help='Plot the flop states as negative probabilites')
 parser.add_argument('hdf5')
 
-BASE = "ACGT"
-colour_A = 'green'
-colour_C = 'blue'
-colour_G = 'orange'
-colour_T = 'red'
 
 
 def depop(sig, thresh):
@@ -120,6 +124,8 @@ def depop(sig, thresh):
 if __name__ == '__main__':
     args = parser.parse_args()
 
+    colours = colour_scheme[args.colours]
+
 
     with h5py.File(args.hdf5, 'r') as h5:
         reads = list(h5.keys())
@@ -127,6 +133,7 @@ if __name__ == '__main__':
         for read in reads:
             sig = h5[posixpath.join(read, 'signal')][()]
             trace = h5[posixpath.join(read, 'trace')][()] / 255.0
+            assert trace.shape[1] == 8, "Trace viewer does not yet support modified bases"
             if args.flipflops:
                 trace[:,4:] *= -1
             down_sample_factor = round(len(sig) / float(len(trace)))
@@ -144,23 +151,23 @@ if __name__ == '__main__':
             pp.ylabel('State probability')
 
             x2 = down_sample_factor * np.arange(len(trace))
-            pp.fill_between(x2, trace[:,0], color=colour_A, alpha=0.3)
-            pp.fill_between(x2, trace[:,1], color=colour_C, alpha=0.3)
-            pp.fill_between(x2, trace[:,2], color=colour_G, alpha=0.3)
-            pp.fill_between(x2, trace[:,3], color=colour_T, alpha=0.3)
-            pp.fill_between(x2, trace[:,4], color=colour_A, alpha=0.3)
-            pp.fill_between(x2, trace[:,5], color=colour_C, alpha=0.3)
-            pp.fill_between(x2, trace[:,6], color=colour_G, alpha=0.3)
-            pp.fill_between(x2, trace[:,7], color=colour_T, alpha=0.3)
+            pp.fill_between(x2, trace[:,0], color=colours['A'], alpha=0.3)
+            pp.fill_between(x2, trace[:,1], color=colours['C'], alpha=0.3)
+            pp.fill_between(x2, trace[:,2], color=colours['G'], alpha=0.3)
+            pp.fill_between(x2, trace[:,3], color=colours['T'], alpha=0.3)
+            pp.fill_between(x2, trace[:,4], color=colours['A'], alpha=0.3)
+            pp.fill_between(x2, trace[:,5], color=colours['C'], alpha=0.3)
+            pp.fill_between(x2, trace[:,6], color=colours['G'], alpha=0.3)
+            pp.fill_between(x2, trace[:,7], color=colours['T'], alpha=0.3)
 
-            pp.plot(x2, trace[:,0], color=colour_A)
-            pp.plot(x2, trace[:,1], color=colour_C)
-            pp.plot(x2, trace[:,2], color=colour_G)
-            pp.plot(x2, trace[:,3], color=colour_T)
-            pp.plot(x2, trace[:,4], color=colour_A, linestyle='dashed')
-            pp.plot(x2, trace[:,5], color=colour_C, linestyle='dashed')
-            pp.plot(x2, trace[:,6], color=colour_G, linestyle='dashed')
-            pp.plot(x2, trace[:,7], color=colour_T, linestyle='dashed')
+            pp.plot(x2, trace[:,0], color=colours['A'])
+            pp.plot(x2, trace[:,1], color=colours['C'])
+            pp.plot(x2, trace[:,2], color=colours['G'])
+            pp.plot(x2, trace[:,3], color=colours['T'])
+            pp.plot(x2, trace[:,4], color=colours['A'], linestyle='dashed')
+            pp.plot(x2, trace[:,5], color=colours['C'], linestyle='dashed')
+            pp.plot(x2, trace[:,6], color=colours['G'], linestyle='dashed')
+            pp.plot(x2, trace[:,7], color=colours['T'], linestyle='dashed')
 
             pp.grid()
             pp.show()
