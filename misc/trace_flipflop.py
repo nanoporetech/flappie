@@ -94,19 +94,19 @@ class Maybe(object):
         return res
 
 
-BASE = "ACGT"
+BASE = "ACGTZ"
 colour_scheme = { 'default' :
                           { 'A' : 'green', 'C' : 'blue', 'G' : 'orange', 'T' : 'red',
-                            'N' : 'grey', 'Z' : 'purple'},
+                            'Z' : 'purple', 'N' : 'grey'},
                   'friendly' : # http://jfly.iam.u-tokyo.ac.jp/color/#pallet
                           { 'A' : '#009e73', 'C' : '#0072b2', 'G' : '#f0e442', 'T' : '#d55e00',
-                            'N' : '#808080', 'Z' : '#cc79a7'},
+                            'Z' : '#cc79a7', 'N' : '#808080'},
                   'gringer' :  # ACGT as suggested by David Eccles, https://github.com/gringer
                           { 'A' : '#006400', 'C' : '#0000ff', 'G' : '#ffd700', 'T' : '#ff6347',
-                            'N' : '#808080', 'Z' : '#cc79a7'},
+                            'Z' : '#cc79a7', 'N' : '#808080'},
                   'traditional' : 
                           { 'A' : 'green', 'C' : 'blue', 'G' : 'gold', 'T' : 'red',
-                            'N' : 'grey', 'Z' : 'purple'}}
+                            'Z' : 'purple', 'N' : 'grey'}}
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--colours', '--colors', default='default',
@@ -140,9 +140,11 @@ if __name__ == '__main__':
         for read in reads:
             sig = h5[posixpath.join(read, 'signal')][()]
             trace = h5[posixpath.join(read, 'trace')][()] / 255.0
-            assert trace.shape[1] == 8, "Trace viewer does not yet support modified bases"
+            nbase = trace.shape[1] // 2
+            assert nbase * 2 == trace.shape[1]
+            assert nbase == 4 or nbase == 5, "Unsupported number of bases"
             if args.flipflops:
-                trace[:,4:] *= -1
+                trace[:,nbase:] *= -1
             down_sample_factor = round(len(sig) / float(len(trace)))
 
             if args.depop is not None:
@@ -158,23 +160,12 @@ if __name__ == '__main__':
             pp.ylabel('State probability')
 
             x2 = down_sample_factor * np.arange(len(trace))
-            pp.fill_between(x2, trace[:,0], color=colours['A'], alpha=0.3)
-            pp.fill_between(x2, trace[:,1], color=colours['C'], alpha=0.3)
-            pp.fill_between(x2, trace[:,2], color=colours['G'], alpha=0.3)
-            pp.fill_between(x2, trace[:,3], color=colours['T'], alpha=0.3)
-            pp.fill_between(x2, trace[:,4], color=colours['A'], alpha=0.3)
-            pp.fill_between(x2, trace[:,5], color=colours['C'], alpha=0.3)
-            pp.fill_between(x2, trace[:,6], color=colours['G'], alpha=0.3)
-            pp.fill_between(x2, trace[:,7], color=colours['T'], alpha=0.3)
+            for i in range(nbase):
+                pp.fill_between(x2, trace[:, i], color=colours[BASE[i]], alpha=0.3)
+                pp.fill_between(x2, trace[:, i + nbase], color=colours[BASE[i]], alpha=0.3)
 
-            pp.plot(x2, trace[:,0], color=colours['A'])
-            pp.plot(x2, trace[:,1], color=colours['C'])
-            pp.plot(x2, trace[:,2], color=colours['G'])
-            pp.plot(x2, trace[:,3], color=colours['T'])
-            pp.plot(x2, trace[:,4], color=colours['A'], linestyle='dashed')
-            pp.plot(x2, trace[:,5], color=colours['C'], linestyle='dashed')
-            pp.plot(x2, trace[:,6], color=colours['G'], linestyle='dashed')
-            pp.plot(x2, trace[:,7], color=colours['T'], linestyle='dashed')
+                pp.plot(x2, trace[:, i], color=colours[BASE[i]])
+                pp.plot(x2, trace[:, i + nbase], color=colours[BASE[i]], linestyle='dashed')
 
             pp.grid()
             pp.show()
