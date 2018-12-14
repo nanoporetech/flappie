@@ -96,13 +96,17 @@ class Maybe(object):
 
 BASE = "ACGT"
 colour_scheme = { 'default' :
-                          { 'A' : 'green', 'C' : 'blue', 'G' : 'orange', 'T' : 'red'},
+                          { 'A' : 'green', 'C' : 'blue', 'G' : 'orange', 'T' : 'red',
+                            'N' : 'grey', 'Z' : 'purple'},
                   'friendly' : # http://jfly.iam.u-tokyo.ac.jp/color/#pallet
-                          { 'A' : '#009e73', 'C' : '#0072b2', 'G' : 'grey', 'T' : '#d55e00'},
-                  'gringer' :
-                          { 'A' : '#006400', 'C' : '#0000ff', 'G' : '#ffd700', 'T' : '#ff6347'},
+                          { 'A' : '#009e73', 'C' : '#0072b2', 'G' : '#f0e442', 'T' : '#d55e00',
+                            'N' : '#808080', 'Z' : '#cc79a7'},
+                  'gringer' :  # ACGT as suggested by David Eccles, https://github.com/gringer
+                          { 'A' : '#006400', 'C' : '#0000ff', 'G' : '#ffd700', 'T' : '#ff6347',
+                            'N' : '#808080', 'Z' : '#cc79a7'},
                   'traditional' : 
-                          { 'A' : 'green', 'C' : 'blue', 'G' : 'grey', 'T' : 'red'}}
+                          { 'A' : 'green', 'C' : 'blue', 'G' : 'gold', 'T' : 'red',
+                            'N' : 'grey', 'Z' : 'purple'}}
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--colours', '--colors', default='default',
