@@ -98,11 +98,11 @@ BASE = "ACGTZ"
 colour_scheme = { 'default' :
                           { 'A' : 'green', 'C' : 'blue', 'G' : 'orange', 'T' : 'red',
                             'Z' : 'purple', 'N' : 'grey'},
+                  'eccles' :  # ACGT as suggested by David Eccles, http://www.gringene.org/
+                          { 'A' : '#006400', 'C' : '#0000ff', 'G' : '#ffd700', 'T' : '#ff6347',
+                            'Z' : '#cc79a7', 'N' : '#808080'},
                   'friendly' : # http://jfly.iam.u-tokyo.ac.jp/color/#pallet
                           { 'A' : '#009e73', 'C' : '#0072b2', 'G' : '#f0e442', 'T' : '#d55e00',
-                            'Z' : '#cc79a7', 'N' : '#808080'},
-                  'gringer' :  # ACGT as suggested by David Eccles, https://github.com/gringer
-                          { 'A' : '#006400', 'C' : '#0000ff', 'G' : '#ffd700', 'T' : '#ff6347',
                             'Z' : '#cc79a7', 'N' : '#808080'},
                   'traditional' : 
                           { 'A' : 'green', 'C' : 'blue', 'G' : 'gold', 'T' : 'red',
