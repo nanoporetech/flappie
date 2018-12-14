@@ -105,7 +105,8 @@ colour_scheme = { 'default' :
                           { 'A' : 'green', 'C' : 'blue', 'G' : 'grey', 'T' : 'red'}}
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--colours', default='default', choices=list(colour_scheme.keys()),
+parser.add_argument('--colours', '--colors', default='default',
+                    choices=list(colour_scheme.keys()),
                     help='Change trace colour scheme')
 parser.add_argument('--depop', default=None, metavar='threshold',
                     type=Maybe(Positive(float)), help='Filter pops from signal')
