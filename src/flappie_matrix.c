@@ -50,6 +50,7 @@ flappie_matrix make_flappie_matrix(size_t nr, size_t nc) {
     return mat;
 }
 
+
 flappie_matrix remake_flappie_matrix(flappie_matrix M, size_t nr, size_t nc) {
     // Could be made more efficient when there is sufficent memory already allocated
     if ((NULL == M) || (M->nr != nr) || (M->nc != nc)) {
@@ -58,6 +59,7 @@ flappie_matrix remake_flappie_matrix(flappie_matrix M, size_t nr, size_t nc) {
     }
     return M;
 }
+
 
 flappie_matrix copy_flappie_matrix(const_flappie_matrix M){
     RETURN_NULL_IF(NULL == M, NULL);
@@ -74,6 +76,7 @@ void zero_flappie_matrix(flappie_matrix M) {
     }
     memset(M->data.f, 0, M->stride * M->nc * sizeof(float));
 }
+
 
 flappie_matrix mat_from_array(const float *x, size_t nr, size_t nc) {
     flappie_matrix res = make_flappie_matrix(nr, nc);
@@ -228,6 +231,7 @@ bool validate_flappie_matrix(flappie_matrix mat, float lower,
 }
 #endif /* NDEBUG */
 
+
 /**  Check whether two matrices are equal within a given tolerance
  *
  *  @param mat1 A `flappie_matrix` to compare
@@ -275,6 +279,7 @@ bool equality_flappie_matrix(const_flappie_matrix mat1,
     return true;
 }
 
+
 flappie_imatrix make_flappie_imatrix(size_t nr, size_t nc) {
     assert(nr > 0);
     assert(nc > 0);
@@ -297,6 +302,7 @@ flappie_imatrix make_flappie_imatrix(size_t nr, size_t nc) {
     return mat;
 }
 
+
 flappie_imatrix remake_flappie_imatrix(flappie_imatrix M, size_t nr, size_t nc) {
     // Could be made more efficient when there is sufficent memory already allocated
     if ((NULL == M) || (M->nr != nr) || (M->nc != nc)) {
@@ -306,6 +312,7 @@ flappie_imatrix remake_flappie_imatrix(flappie_imatrix M, size_t nr, size_t nc) 
     return M;
 }
 
+
 flappie_imatrix copy_flappie_imatrix(const_flappie_imatrix M){
     RETURN_NULL_IF(NULL == M, NULL);
     flappie_imatrix C = make_flappie_imatrix(M->nr, M->nc);
@@ -313,6 +320,7 @@ flappie_imatrix copy_flappie_imatrix(const_flappie_imatrix M){
     memcpy(C->data.f, M->data.f, sizeof(__m128i) * C->nrq * C->nc);
     return C;
 }
+
 
 flappie_imatrix free_flappie_imatrix(flappie_imatrix mat) {
     if (NULL != mat) {
@@ -322,12 +330,33 @@ flappie_imatrix free_flappie_imatrix(flappie_imatrix mat) {
     return NULL;
 }
 
+
 void zero_flappie_imatrix(flappie_imatrix M) {
     if (NULL == M) {
         return;
     }
     memset(M->data.f, 0, M->stride * M->nc * sizeof(int));
 }
+
+
+int32_t * array_from_flappie_imatrix(const_flappie_imatrix mat){
+    RETURN_NULL_IF(NULL == mat, NULL);
+
+    const size_t nelt = mat->nr * mat->nc;
+    int32_t * res = calloc(nelt, sizeof(int32_t));
+    RETURN_NULL_IF(NULL == res, NULL);
+
+    for(size_t c=0 ; c < mat->nc ; c++){
+        const size_t offset_out = c * mat->nr;
+        const size_t offset_in = c * mat->stride;
+        for(size_t r=0 ; r < mat->nr ; r++){
+            res[offset_out + r] = mat->data.f[offset_in + r];
+        }
+    }
+
+    return res;
+}
+
 
 flappie_matrix affine_map(const_flappie_matrix X, const_flappie_matrix W,
                            const_flappie_matrix b, flappie_matrix C) {
@@ -358,6 +387,7 @@ flappie_matrix affine_map(const_flappie_matrix X, const_flappie_matrix W,
 
     return C;
 }
+
 
 flappie_matrix affine_map2(const_flappie_matrix Xf, const_flappie_matrix Xb,
                             const_flappie_matrix Wf, const_flappie_matrix Wb,
@@ -390,6 +420,7 @@ flappie_matrix affine_map2(const_flappie_matrix Xf, const_flappie_matrix Xb,
                 C->data.f, C->stride);
     return C;
 }
+
 
 void row_normalise_inplace(flappie_matrix C) {
     if (NULL == C) {
@@ -453,6 +484,7 @@ float max_flappie_matrix(const_flappie_matrix x) {
     return amax;
 }
 
+
 float min_flappie_matrix(const_flappie_matrix x) {
     if (NULL == x) {
         // Input NULL due to earlier failure.  Propagate
@@ -469,6 +501,7 @@ float min_flappie_matrix(const_flappie_matrix x) {
     }
     return amin;
 }
+
 
 int argmax_flappie_matrix(const_flappie_matrix x) {
     if (NULL == x) {
@@ -490,6 +523,7 @@ int argmax_flappie_matrix(const_flappie_matrix x) {
     return imax;
 }
 
+
 int argmin_flappie_matrix(const_flappie_matrix x) {
     if (NULL == x) {
         // Input NULL due to earlier failure.  Propagate
@@ -509,6 +543,7 @@ int argmin_flappie_matrix(const_flappie_matrix x) {
     }
     return imin;
 }
+
 
 bool validate_vector(float *vec, const size_t n, const float lower,
                      const float upper, const char *file, const int line) {

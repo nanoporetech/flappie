@@ -8,15 +8,19 @@
 #  http://nanoporetech.com
 
 import argparse
-import pickle
 import math
 import numpy as np
+import pickle
 import re
 import sys
 
+from sloika.cmdargs import AutoBool, FileExists
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--id', default='' , help='Identifier for model names')
-parser.add_argument('model', help='Pickle to read model from')
+parser.add_argument('--scale', default=False, action=AutoBool,
+                    help='Correct scaling when network trained without MAD factor')
+parser.add_argument('model', action=FileExists, help='Pickle to read model from')
 
 
 trim_trailing_zeros = re.compile('0+p')
@@ -80,6 +84,9 @@ if __name__ == '__main__':
     """
 
     filterW =  network.sublayers[0].W.get_value()
+    if args.scale:
+        #  Scaling factor for MAD
+        filterW *= 1.4826
     nfilter, _ , winlen = filterW.shape
     cformatM(sys.stdout, 'conv_rnnrf_flipflop_{}W'.format(modelid), filterW.reshape(-1, 1), nr = winlen * 4 - 3, nc=nfilter)
     cformatV(sys.stdout, 'conv_rnnrf_flipflop_{}b'.format(modelid), network.sublayers[0].b.get_value().reshape(-1))

@@ -58,6 +58,7 @@ flappie_imatrix remake_flappie_imatrix(flappie_imatrix M, size_t nr, size_t nc);
 flappie_imatrix copy_flappie_imatrix(const_flappie_imatrix mat);
 flappie_imatrix free_flappie_imatrix(flappie_imatrix mat);
 void zero_flappie_imatrix(flappie_imatrix M);
+int32_t * array_from_flappie_imatrix(const_flappie_imatrix mat);
 
 flappie_matrix affine_map(const_flappie_matrix X, const_flappie_matrix W,
                            const_flappie_matrix b, flappie_matrix C);

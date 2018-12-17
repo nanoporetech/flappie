@@ -336,8 +336,12 @@ void write_summary(hid_t hdf5file, const char *readname,
     herr_t status = write_signal(read_group, res.rt.raw + res.rt.start,
                                  nsample, chunk_size, compression_level);
 
-    herr_t status2 = write_trace(read_group, res.trace->data.f, res.trace->nr, res.trace->nc,
-                                 chunk_size, compression_level);
+    int32_t * trace_flat = array_from_flappie_imatrix(res.trace);
+    if(NULL != trace_flat){
+        herr_t status2 = write_trace(read_group, trace_flat, res.trace->nr, res.trace->nc,
+                                     chunk_size, compression_level);
+        free(trace_flat);
+    }
 
     H5Gclose(read_group);
 
