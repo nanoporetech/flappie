@@ -97,6 +97,9 @@ misc/trace_flipflop.py trace.hdf5
 
 #  View a trace -- Guppy trace output
 misc/trace_flipflop.py guppy_trace.fast5
+
+#  View a trace -- Guppy trace output, additional analysis
+misc/trace_flipflop.py --analysis 1 guppy_trace.fast5
 ```
 
 
