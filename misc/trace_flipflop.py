@@ -127,6 +127,9 @@ def depop(sig, thresh):
     sig[where_big] = 0
     return sig
 
+def is_single_read_fast5(h5):
+    return 'Raw' in h5
+
 
 
 if __name__ == '__main__':
@@ -142,14 +145,13 @@ if __name__ == '__main__':
             reads = list(h5.keys())
         else:
             #  Guppy fast5
-            if h5.attrs['file_version'] < 2.0:
+            guppy_single_read = is_single_read_fast5(h5)
+            if guppy_single_read:
                 #  Single-read fast5
                 reads = [args.hdf5]
-                guppy_single_read = True
             else:
                 #  Multi-read fast5
                 reads = list(h5.keys())
-                guppy_single_read = False
 
         for read in reads:
             if args.guppy is None:
