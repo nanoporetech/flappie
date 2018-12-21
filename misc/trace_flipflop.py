@@ -114,6 +114,7 @@ parser.add_argument('--colours', '--colors', default='default',
                     help='Change trace colour scheme')
 parser.add_argument('--depop', default=None, metavar='threshold',
                     type=Maybe(Positive(float)), help='Filter pops from signal')
+parser.add_argument('--guppy', default=None, metavar='analysis', type=int) 
 parser.add_argument('--limit', default=10, type=Maybe(int))
 parser.add_argument('--flipflops', default=False, action=AutoBool,
                     help='Plot the flop states as negative probabilites')
@@ -135,11 +136,48 @@ if __name__ == '__main__':
 
 
     with h5py.File(args.hdf5, 'r') as h5:
-        reads = list(h5.keys())
+       
+        if args.guppy is None: 
+            #  Flappie format
+            reads = list(h5.keys())
+        else:
+            #  Guppy fast5
+            if h5.attrs['file_version'] < 2.0:
+                #  Single-read fast5
+                reads = [args.hdf5]
+                guppy_single_read = True
+            else:
+                #  Multi-read fast5
+                reads = list(h5.keys())
+                guppy_single_read = False
 
         for read in reads:
-            sig = h5[posixpath.join(read, 'signal')][()]
-            trace = h5[posixpath.join(read, 'trace')][()] / 255.0
+            if args.guppy is None:
+               #  Flappie format
+               sig = h5[posixpath.join(read, 'signal')][()]
+               trace = h5[posixpath.join(read, 'trace')][()] / 255.0
+            else:
+               #  Guppy
+               if guppy_single_read:
+                   #  Guppy single-read
+                   readh5 = h5
+                   readno = list(readh5[posixpath.join('Raw', 'Reads')].keys())[0]
+                   sig = readh5[posixpath.join('Raw', 'Reads', readno, 'Signal')][()] / 255.0
+               else:
+                   #  Guppy multi-read
+                   readh5 = h5[read]
+                   sig = readh5[posixpath.join('Raw', 'Signal')][()] / 255.0
+
+               trace = readh5[posixpath.join('Analyses', 'Basecall_1D_{:03d}'.format(args.guppy),
+                                             'BaseCalled_template', 'Trace')][()]
+               segpath = posixpath.join('Analyses', 'Segmentation_{:03d}'.format(args.guppy),
+                                        'Summary', 'segmentation')
+               sig_start = readh5[segpath].attrs['first_sample_template']
+               sig_length = readh5[segpath].attrs['duration_template']
+               sig = sig[sig_start : sig_start + sig_length]
+               
+               
+               
             nbase = trace.shape[1] // 2
             assert nbase * 2 == trace.shape[1]
             assert nbase == 4 or nbase == 5, "Unsupported number of bases"
