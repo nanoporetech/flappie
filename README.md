@@ -206,3 +206,15 @@ probabilities for each block may not equal 255.
 
 ## References and Supporting Information
 
+### Research Release
+This is a research release provided under the Oxford Nanopore
+Technologies Ltd Public Licence 1.0.  Research releases are provided as
+technology demonstrators to provide early access to features or
+stimulate Community development of tools.  Support for this repository
+will be minimal and is only provided directly by the developers for this
+GitHub project.  Feature requests, improvements and discussions are
+welcome and are to be implemented by forking and pull requests.
+Nevertheless, however much we would like to rectify every issue and
+piece of feedback the user may have, we have limited resource for
+support of this repository.  We will rapidly iterate Flappie and the
+Oxford Nanopore Technology Research Releases, regardless.
