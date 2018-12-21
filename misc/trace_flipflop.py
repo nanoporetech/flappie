@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+from enum import Enum
 import h5py
 from matplotlib import pyplot as pp
 import numpy as np
@@ -109,12 +110,13 @@ colour_scheme = { 'default' :
                             'Z' : 'purple', 'N' : 'grey'}}
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--analysis', metavar='number', type=int, default=0,
+                    help='Analysis number for fast5 files')
 parser.add_argument('--colours', '--colors', default='default',
                     choices=list(colour_scheme.keys()),
                     help='Change trace colour scheme')
 parser.add_argument('--depop', default=None, metavar='threshold',
                     type=Maybe(Positive(float)), help='Filter pops from signal')
-parser.add_argument('--guppy', default=None, metavar='analysis', type=int) 
 parser.add_argument('--limit', default=10, type=Maybe(int))
 parser.add_argument('--flipflops', default=False, action=AutoBool,
                     help='Plot the flop states as negative probabilites')
@@ -127,8 +129,11 @@ def depop(sig, thresh):
     sig[where_big] = 0
     return sig
 
-def is_single_read_fast5(h5):
-    return 'Raw' in h5
+
+class FileType(Enum):
+    flappie_trace = 0
+    single_read_fast5 = 1
+    multi_read_fast5 = 2
 
 
 
@@ -139,14 +144,20 @@ if __name__ == '__main__':
 
 
     with h5py.File(args.hdf5, 'r') as h5:
-       
-        if args.guppy is None: 
+        if 'file_version' in h5.attrs:
+            if 'Raw' in h5:
+                file_type = FileType.single_read_fast5
+            else:
+                file_type = FileType.multi_read_fast5
+        else:
+            file_type = FileType.flappie_trace
+  
+        if file_type == FileType.flappie_trace:
             #  Flappie format
             reads = list(h5.keys())
         else:
             #  Guppy fast5
-            guppy_single_read = is_single_read_fast5(h5)
-            if guppy_single_read:
+            if file_type == FileType.single_read_fast5:
                 #  Single-read fast5
                 reads = [args.hdf5]
             else:
@@ -154,13 +165,13 @@ if __name__ == '__main__':
                 reads = list(h5.keys())
 
         for read in reads:
-            if args.guppy is None:
+            if file_type == FileType.flappie_trace:
                #  Flappie format
                sig = h5[posixpath.join(read, 'signal')][()]
                trace = h5[posixpath.join(read, 'trace')][()] / 255.0
             else:
                #  Guppy
-               if guppy_single_read:
+               if file_type == FileType.single_read_fast5:
                    #  Guppy single-read
                    readh5 = h5
                    readno = list(readh5[posixpath.join('Raw', 'Reads')].keys())[0]
@@ -170,9 +181,9 @@ if __name__ == '__main__':
                    readh5 = h5[read]
                    sig = readh5[posixpath.join('Raw', 'Signal')][()] / 255.0
 
-               trace = readh5[posixpath.join('Analyses', 'Basecall_1D_{:03d}'.format(args.guppy),
+               trace = readh5[posixpath.join('Analyses', 'Basecall_1D_{:03d}'.format(args.analysis),
                                              'BaseCalled_template', 'Trace')][()]
-               segpath = posixpath.join('Analyses', 'Segmentation_{:03d}'.format(args.guppy),
+               segpath = posixpath.join('Analyses', 'Segmentation_{:03d}'.format(args.analysis),
                                         'Summary', 'segmentation')
                sig_start = readh5[segpath].attrs['first_sample_template']
                sig_length = readh5[segpath].attrs['duration_template']
