@@ -76,6 +76,30 @@ find reads -name \*.fast5 | parallel -P $(nproc) -X flappie > basecalls.fq
 find reads -name \*.fast5 | parallel -P $(nproc) -X flappie --trace trace_{%}.hdf5 {} > basecalls.fq
 ```
 
+## Trace viewer
+
+A basic trace viewer is supplied with _Flappie_, supporting trace output for both _Flappie_ and _Guppy_.
+
+
+
+![nanopore trace with 5 bases](images/trace.png)
+
+
+```
+#  Set up
+virtualenv -p python3 venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r misc/trace_requirements.txt
+
+#  View a trace -- Flappie trace output
+misc/trace_flipflop.py trace.hdf5
+
+#  View a trace -- Flappie trace output
+misc/trace_flipflop.py guppy_trace.fast5
+```
+
+
 # Help
 
 ## Licence and Copyright
