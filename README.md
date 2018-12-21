@@ -95,7 +95,7 @@ pip install -r misc/trace_requirements.txt
 #  View a trace -- Flappie trace output
 misc/trace_flipflop.py trace.hdf5
 
-#  View a trace -- Flappie trace output
+#  View a trace -- Guppy trace output
 misc/trace_flipflop.py guppy_trace.fast5
 ```
 
