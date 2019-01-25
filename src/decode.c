@@ -1,7 +1,7 @@
 /*  Copyright 2018 Oxford Nanopore Technologies, Ltd */
 
 /*  This Source Code Form is subject to the terms of the Oxford Nanopore
- *  Technologies, Ltd. Public License, v. 1.0. If a copy of the License 
+ *  Technologies, Ltd. Public License, v. 1.0. If a copy of the License
  *  was not  distributed with this file, You can obtain one at
  *  http://nanoporetech.com
  */
@@ -541,3 +541,353 @@ flappie_imatrix trace_from_posterior(const flappie_matrix tpost){
 
     return trace;
 }
+
+
+/**  Approximate mean of a Discrete Weibull distribution
+ *
+ *   @param shape  Shape parameter of distribution
+ *   @param scale  Scale parameter of distribution
+ *   @param maxval Maximum value to calculate up to
+ **/
+float dwmean(float shape, float scale, int maxval){
+    assert(shape > 0.0f);
+    assert(scale > 0.0f);
+    assert(maxval > 0);
+    float m = 0.0f;
+    for(int i=1 ; i <= maxval ; i++){
+        m += expf(-powf((float)i / scale, shape));
+    }
+    return m;
+}
+
+
+/**  Calculate length of base runs given path
+ *
+ *   For each non-stay element on path, calculated expected length of run
+ *
+ *   @param param  Flappie matrix [13 x nblk] containing predicted parameters
+ *   @param path Array[nblk] containing best path; -1 for stay
+ *   @param runlength[out] Array[nblk] to write runs out to; 0 for stay
+ *
+ *   @returns score of best path
+ **/
+size_t runlengths_mean(const_flappie_matrix param, const int * path, int * runlength){
+    RETURN_NULL_IF(NULL == param, 0);
+    RETURN_NULL_IF(NULL == path, 0);
+    RETURN_NULL_IF(NULL == runlength, 0);
+
+    const size_t nblk = param->nc;
+    const size_t nparam = param->nr;
+    const size_t nbase = nbase_from_runlength_nparam(nparam);
+    const size_t param_shape_offset = 0;
+    const size_t param_scale_offset = nbase;
+
+    memset(runlength, 0, nblk * sizeof(int));
+
+    size_t seqlen = 0;
+    for(size_t blk=0 ; blk < nblk ; blk++){
+        if(path[blk] < 0){
+            // Short circuit stays
+            continue;
+        }
+        const size_t offset = blk * param->stride + path[blk];
+        const float shape = param->data.f[offset + param_shape_offset];
+        const float scale = param->data.f[offset + param_scale_offset];
+        const float meanest = dwmean(shape, scale, 10);
+        runlength[blk] = 1 + roundf(meanest);
+        seqlen += runlength[blk];
+    }
+    return seqlen;
+}
+
+
+/**  Calculate length of base runs given path
+ *
+ *   For each non-stay element on path, assign unit run
+ *
+ *   @param param  Flappie matrix [13 x nblk] containing predicted parameters
+ *   @param path Array[nblk] containing best path; -1 for stay
+ *   @param runlength[out] Array[nblk] to write runs out to; 0 for stay
+ *
+ *   @returns score of best path
+ **/
+size_t runlengths_unit(const_flappie_matrix param, const int * path, int * runlength){
+    RETURN_NULL_IF(NULL == param, 0);
+    RETURN_NULL_IF(NULL == path, 0);
+    RETURN_NULL_IF(NULL == runlength, 0);
+
+    const size_t nblk = param->nc;
+    memset(runlength, 0, nblk * sizeof(int));
+
+    size_t seqlen = 0;
+    for(size_t blk=0 ; blk < nblk ; blk++){
+        if(path[blk] < 0){
+            // Short circuit stays
+            continue;
+        }
+        runlength[blk] = 1;
+        seqlen += runlength[blk];
+    }
+    return seqlen;
+}
+
+
+/**  Convert path and runlength arrays into base-space sequence
+ *
+ *   @param path Array[nblk] containing path; -1 for stay
+ *   @param runlength Array[nblk] containing runlengths; 0 for stay
+ *   @param nblk Number of blocks (length of two arrays)
+ *
+ *   @returns Null terminated array containing base-space sequence
+ **/
+char * runlength_to_basecall(const int * path, const int * runlength, size_t nblk){
+    RETURN_NULL_IF(NULL == path, NULL);
+    RETURN_NULL_IF(NULL == runlength, NULL);
+
+
+    int seqlen = 0;
+    for(size_t blk=0 ; blk < nblk ; blk++){
+        seqlen += runlength[blk];
+    }
+
+    char * seq = calloc(seqlen + 1, sizeof(char));
+    RETURN_NULL_IF(NULL == seq, NULL);
+
+    for(size_t blk=0, i=0 ; blk < nblk ; blk++){
+        if(path[blk] < 0){
+            continue;
+        }
+        const char base = base_lookup[path[blk]];
+        for(size_t rl=0 ; rl < runlength[blk] ; rl++, i++){
+            seq[i] = base;
+        }
+    }
+
+    return seq;
+}
+
+
+/**  Decoding of runlength model with multiple stay states
+ *
+ *   Runlength models have the restriction that you can't move to the same
+ *   base that you are already in. Once in a move state, the model must
+ *   immediately exit into either the corresponding stay state or a new
+ *   move state.
+ *
+ *   Since this model is globally normalised, sum(exp(weights)) may not sum
+ *   to one.
+ *
+ *   Order of params:  Each column contained 16 entries in the following order:
+ *       0 --  3 : 'R' parameter for negative binomial distribution [ACGT]
+ *       4 --  7 : 'P' parameter for negative binomial distribution [ACGT]
+ *       8 -- 11 : Move weights [ACGT]
+ *      12 -- 15 : Stay weights [ACGT]
+ *
+ *   @param param  Flappie matrix [16 x nblk] containing predicted parameters
+ *   @param combine_stays Combine all stay states in path to single state
+ *   @param path[out] Array to write out best path
+ *
+ *   @returns score of best path
+ **/
+float decode_runlength(const_flappie_matrix param, int * path){
+    RETURN_NULL_IF(NULL == param, NAN);
+    RETURN_NULL_IF(NULL == path, NAN);
+    const size_t nblk = param->nc;
+    const size_t nparam = param->nr;
+    const size_t nbase = nbase_from_runlength_nparam(nparam);
+
+    float * mem = calloc(2 * nbase, sizeof(float));
+    char * traceback = calloc(nbase * nblk, sizeof(char));
+    if(NULL == mem || NULL == traceback){
+        free(mem);
+        free(traceback);
+        return NAN;
+    }
+
+    float * prev = mem;
+    float * curr = mem + nbase;
+
+    for(size_t blk=0 ; blk < nblk ; blk++){
+        const size_t offset_move = blk * param->stride + nbase + nbase;
+        const size_t offset_stay = offset_move + nbase;
+        const size_t toffset = blk * nbase;
+        {   //  Swap memory
+            float * tmp;
+            tmp = prev;
+            prev = curr;
+            curr = tmp;
+        }
+
+        {   // Move to new base (need best and second best indexes: gross modification of prev)
+            const int idx = argmaxf(prev, nbase);
+            const float max_score = prev[idx];
+            prev[idx] = -HUGE_VAL;
+            const int idx2 = argmaxf(prev, nbase);
+            prev[idx] = max_score;
+
+            for(size_t b=0 ; b < nbase ; b++){
+                curr[b] = max_score;
+                traceback[toffset + b] = idx;
+            }
+            curr[idx] = prev[idx2];
+            traceback[toffset + idx] = idx2;
+
+            for(size_t b=0 ; b < nbase ; b++){
+                //  Add on move score
+                curr[b] += param->data.f[offset_move + b];
+            }
+        }
+        for(int b=0 ; b < nbase ; b++){
+            //  Stay state : come either from corresponding move state or same stay
+            const float stay_score = prev[b] +  param->data.f[offset_stay + b];
+            if(stay_score > curr[b]){
+                // Come from stay
+                curr[b] = stay_score;
+                traceback[toffset + b] = b + nbase;
+            }
+        }
+    }
+
+
+    for(size_t blk=0 ; blk < nblk ; blk++){
+        path[blk] = -1;
+    }
+    size_t last_state = argmaxf(curr, nbase);
+    const float logscore = curr[last_state];
+    for(size_t blk=nblk ; blk > 0 ; blk--){
+        const size_t blkm1 = blk - 1;
+        const char state = traceback[blkm1 * nbase + last_state];
+        if(state < nbase){
+            path[blkm1] = last_state;
+            last_state = state;
+        }
+    }
+
+    free(traceback);
+    free(mem);
+
+    return logscore;
+}
+
+
+/**  Posterior state probabilities runlength model with multiple stay states
+ *
+ *   Runlength models have the restriction that you can't move to the same
+ *   base that you are already in. Once in a move state, the model must
+ *   immediately exit into either the corresponding stay state or a new
+ *   move state.
+ *
+ *   Since this model is globally normalised, sum(exp(weights)) may not sum
+ *   to one.
+ *
+ *   Order of params:  Each column contained 16 entries in the following order:
+ *       0 --  3 : 'R' parameter for negative binomial distribution [ACGT]
+ *       4 --  7 : 'P' parameter for negative binomial distribution [ACGT]
+ *       8 -- 11 : Move weights [ACGT]
+ *      12 -- 15 : Stay weights [ACGT]
+ *
+ *   @param param  Flappie matrix [16 x nblk] containing predicted parameters
+ *   @param combine_stays Combine all stay states in path to single state
+ *   @param path[out] Array to write out best path
+ *
+ *   @returns Flappie matrix containing log posterior probabilities
+ **/
+flappie_matrix posterior_runlength(const_flappie_matrix param){
+    RETURN_NULL_IF(NULL == param, NULL);
+    const size_t nblk = param->nc;
+    const size_t nparam = param->nr;
+    const size_t nbase = nbase_from_runlength_nparam(nparam);
+    const size_t param_p_offset = nbase;
+    const size_t param_cat_offset = param_p_offset + nbase;
+    const size_t param_stay_offset = param_cat_offset + nbase;
+
+    flappie_matrix fwd = make_flappie_matrix(nbase, nblk + 1);
+    flappie_matrix post = make_flappie_matrix(nparam, nblk + 1);
+    float * mem = calloc(nbase + nbase, sizeof(float));
+    if(NULL == fwd || NULL == post || NULL == mem){
+        fwd = free_flappie_matrix(fwd);
+        post = free_flappie_matrix(post);
+        free(mem);
+        return NULL;
+    }
+
+
+    for(size_t blk=0 ; blk < nblk ; blk++){
+        //  Forwards calculation
+        const size_t offset = blk * param->stride + param_cat_offset;
+        const size_t offset_stay = blk * param->stride + param_stay_offset;
+        float * prev = fwd->data.f + blk * fwd->stride;
+        float * curr = prev + fwd->stride;
+
+        for(size_t b1=0 ; b1 < nbase ; b1++){
+            curr[b1] = -HUGE_VAL;
+            // Move from different base
+            for(size_t b2=0 ; b2 < nbase ; b2++){
+                if(b1 != b2){
+                    curr[b1] = logsumexpf(curr[b1], prev[b2]);
+                }
+            }
+            curr[b1] += param->data.f[offset + b1];
+        }
+        for(size_t b=0 ; b < nbase ; b++){
+            // Stay in same base
+            curr[b] = logsumexpf(curr[b], prev[b] + param->data.f[offset_stay + b]);
+        }
+    }
+
+
+    float * prev = mem;
+    float * curr = prev + nbase;
+    for(size_t blk=nblk ; blk > 0 ; blk--){
+        const size_t foffset = (blk - 1) * fwd->stride;
+        const size_t offset = (blk - 1) * param->stride + param_cat_offset;
+        const size_t offset_stay = (blk - 1) * param->stride + param_stay_offset;
+
+        // Backwards
+        {  // swap
+            float * tmp = curr;
+            curr = prev;
+            prev = tmp;
+        }
+
+        for(size_t b1=0 ; b1 < nbase ; b1++){
+            curr[b1] = -HUGE_VAL;
+            post->data.f[offset + b1] = -HUGE_VAL;
+            // Move from different base
+            for(size_t b2=0 ; b2 < nbase ; b2++){
+                if(b1 != b2){
+                    curr[b1] = logsumexpf(curr[b1], prev[b2] + param->data.f[offset + b2]);
+                    post->data.f[offset + b1] = logsumexpf(post->data.f[offset + b1], fwd->data.f[foffset + b2]);
+                }
+            }
+            post->data.f[offset + b1] += prev[b1] + param->data.f[offset + b1];
+        }
+        for(size_t b=0 ; b < nbase ; b++){
+            // Stay in same base
+            curr[b] = logsumexpf(curr[b], prev[b] + param->data.f[offset_stay + b]);
+            post->data.f[offset_stay + b] = fwd->data.f[foffset + b] + param->data.f[offset_stay + b] + prev[b];
+        }
+
+        float score = curr[0] + fwd->data.f[foffset + 0];
+        for(size_t i=1 ; i < nbase ; i++){
+            score = logsumexpf(score, curr[i] + fwd->data.f[foffset + i]);
+        }
+        //printf("score for blk %zu : %f\n", blk - 1, score);
+    }
+
+    const size_t last_offset = nblk * fwd->stride;
+    float scoreF = fwd->data.f[last_offset];
+    float scoreB = curr[0];
+    for(size_t st=1 ; st < nbase ; st ++){
+        scoreF = logsumexpf(scoreF, fwd->data.f[last_offset + st]);
+        scoreB = logsumexpf(scoreB, curr[st]);
+    }
+    //printf("ScoreF = %f  scoreB = %f\n", scoreF, scoreB);
+
+    free(mem);
+    fwd = free_flappie_matrix(fwd);
+
+
+    return post;
+}
+

@@ -1,7 +1,7 @@
 /*  Copyright 2018 Oxford Nanopore Technologies, Ltd */
 
 /*  This Source Code Form is subject to the terms of the Oxford Nanopore
- *  Technologies, Ltd. Public License, v. 1.0. If a copy of the License 
+ *  Technologies, Ltd. Public License, v. 1.0. If a copy of the License
  *  was not  distributed with this file, You can obtain one at
  *  http://nanoporetech.com
  */
@@ -225,7 +225,7 @@ static struct _raw_basecall_info calculate_post(char * filename, enum model_type
 
     medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
 
-    flappie_matrix trans_weights = flipflop_transitions(rt, args.temperature, model);
+    flappie_matrix trans_weights = calculate_transitions(rt, args.temperature, model);
     if (NULL == trans_weights) {
         free(rt.raw);
         free(rt.uuid);
@@ -263,7 +263,7 @@ static struct _raw_basecall_info calculate_post(char * filename, enum model_type
     const size_t basecall_length = strlen(basecall);
 
     return (struct _raw_basecall_info) {
-    	.score = score, 
+    	.score = score,
         .rt = rt,
         .basecall = basecall,
         .quality = quality,
@@ -332,7 +332,7 @@ int main(int argc, char * argv[]){
                 continue;
             }
 
-            fprintf_format(args.outformat, args.output, res.rt.uuid, 
+            fprintf_format(args.outformat, args.output, res.rt.uuid,
                            basename(filename), args.uuid, args.prefix, res);
 
             write_summary(hdf5out, args.uuid ? res.rt.uuid : basename(filename), res,

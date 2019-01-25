@@ -21,8 +21,8 @@ set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Scrappie is the technology demonstration
 set (CPACK_PACKAGE_VENDOR "Oxford Nanopore Technologies")
 set (CPACK_PACKAGE_DESCRIPTION_FILE "${PROJECT_SOURCE_DIR}/README.md")
 #set (CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE.md")
-set (CPACK_PACKAGE_VERSION_MAJOR 1)
-set (CPACK_PACKAGE_VERSION_MINOR 1)
+set (CPACK_PACKAGE_VERSION_MAJOR 2)
+set (CPACK_PACKAGE_VERSION_MINOR 0)
 set (CPACK_PACKAGE_VERSION_PATCH 0)
 
 # Get the latest abbreviated commit hash of the working branch
@@ -90,6 +90,9 @@ set_target_properties(flappie_static PROPERTIES OUTPUT_NAME flappie CLEAN_DIRECT
 add_executable (flappie
 	src/fast5_interface.c 
 	src/flappie.c)
+add_executable (runnie
+	src/fast5_interface.c
+	src/runnie.c)
 
 if (BUILD_SHARED_LIB)
 	if (APPLE)
@@ -124,11 +127,14 @@ else (HDF5_STANDARD)
 endif (HDF5_STANDARD)
 
 target_link_libraries (flappie flappie_static ${BLAS} ${HDF5} m)
+target_link_libraries (runnie flappie_static ${BLAS} ${HDF5} m)
 if (APPLE)
 	target_link_libraries (flappie argp)
+	target_link_libraries (runnie argp)
 endif (APPLE)
 
 install (TARGETS flappie flappie_static RUNTIME DESTINATION bin ARCHIVE DESTINATION lib)
+install (TARGETS runnie flappie_static RUNTIME DESTINATION bin ARCHIVE DESTINATION lib)
 
 
 enable_testing()
@@ -150,10 +156,15 @@ set (TESTREAD "MINICOL228_20161012_FNFAB42578_MN17976_mux_scan_HG_52221_ch271_re
 set (ENV{OPENBLAS_NUM_THREADS} 1)
 
 add_test(NAME unittest WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/test/ COMMAND flappie_unittest)
-add_test(test_call flappie ${READSDIR})
-add_test(test_licence flappie --licence)
-add_test(test_license flappie --license)
-add_test(test_help flappie --help)
-add_test(test_version flappie --version)
+add_test(test_flappie_call flappie ${READSDIR})
+add_test(test_flappie_licence flappie --licence)
+add_test(test_flappie_license flappie --license)
+add_test(test_flappie_help flappie --help)
+add_test(test_flappie_version flappie --version)
+add_test(test_runnie_call runnie ${READSDIR})
+add_test(test_runnie_licence runnie --licence)
+add_test(test_runnie_license runnie --license)
+add_test(test_runnie_help runnie --help)
+add_test(test_runnie_version runnie --version)
 
 add_custom_target(test-verbose COMMAND ${CMAKE_CTEST_COMMAND} --verbose)

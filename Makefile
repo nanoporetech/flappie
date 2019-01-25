@@ -9,9 +9,13 @@ buildDir ?= build
 releaseType ?= Release
 
 .PHONY: all
-all: flappie
+all: flappie runnie
+
 flappie: ${buildDir}/flappie
 	cp ${buildDir}/flappie flappie
+
+runnie: ${buildDir}/runnie
+	cp ${buildDir}/runnie runnie
 
 ${buildDir}:
 	mkdir ${buildDir}
@@ -23,9 +27,9 @@ test: ${buildDir}/flappie
 
 .PHONY: clean
 clean:
-	rm -rf ${buildDir} flappie
+	rm -rf ${buildDir} flappie runnie
 
-${buildDir}/flappie: ${buildDir}
+${buildDir}/flappie ${buildDir}/runnie: ${buildDir}
 	cd ${buildDir} && \
 	cmake .. -DCMAKE_BUILD_TYPE=${releaseType} && \
 	make
