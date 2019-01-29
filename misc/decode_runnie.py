@@ -31,7 +31,7 @@ parser.add_argument('--limit', default=None, type=Positive(int),
                     help='Limit number of reads processed')
 parser.add_argument('--run_max', default=50, type=Positive(int),
                     help='Maximum run for mean approximation')
-parser.add_argument('--scaling_factor', default=(1.0, 1.0), nargs=2,
+parser.add_argument('--scaling_factor', default=(1.0, 1.05), nargs=2,
                     metavar=('shape', 'scale'), type=Positive(float),
                     help='Scaling for parameters')
 parser.add_argument('--threads', default=1, type=Positive(int),
