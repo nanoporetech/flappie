@@ -593,7 +593,7 @@ size_t runlengths_mean(const_flappie_matrix param, const int * path, int * runle
         const size_t offset = blk * param->stride + path[blk];
         const float shape = param->data.f[offset + param_shape_offset];
         const float scale = param->data.f[offset + param_scale_offset];
-        const float meanest = dwmean(shape, scale, 10);
+        const float meanest = dwmean(shape, scale, 100);
         runlength[blk] = 1 + roundf(meanest);
         seqlen += runlength[blk];
     }
