@@ -31,9 +31,12 @@ parser.add_argument('--limit', default=None, type=Positive(int),
                     help='Limit number of reads processed')
 parser.add_argument('--run_max', default=50, type=Positive(int),
                     help='Maximum run for mean approximation')
-parser.add_argument('--scaling_factor', default=(1.0, 1.05), nargs=2,
-                    metavar=('shape', 'scale'), type=Positive(float),
-                    help='Scaling for parameters')
+parser.add_argument('--scale', default=(1.06, 1.06, 1.06, 1.06), nargs=4,
+                    metavar=('scaleA', 'scaleC', 'scaleG', 'scaleT'), type=Positive(float),
+                    help='Factors for per-base scale parameter')
+parser.add_argument('--shape', default=(1.00, 1.00, 1.00, 1.00), nargs=4,
+                    metavar=('shapeA', 'shapeC', 'shapeG', 'shapeT'), type=Positive(float),
+                    help='Factors for per-base shape parameter')
 parser.add_argument('--threads', default=1, type=Positive(int),
                     help='Number of threads to use')
 parser.add_argument('--width', default=60, type=Positive(int),
@@ -78,8 +81,11 @@ def run_estimate(shape, scale, imax=50):
     return 1 + np.round(approx_mean_discrete_weibull(imax, shape, scale)).astype(int)
 
 
+baseidx = {b : i for i, b in enumerate('ACGT')}
 def runlength_basecall(read_data, shapef, scalef, imax=50):
-    return ''.join([b * run_estimate(sh * shapef, sc * scalef, imax=imax) for b, sh, sc in read_data])
+    return ''.join([b * run_estimate(sh * shapef[baseidx[b]],
+                                     sc * scalef[baseidx[b]], imax=imax)
+                    for b, sh, sc in read_data])
 
 
 def read_generator(fh):
@@ -98,19 +104,19 @@ def read_generator(fh):
     yield read_name, read_data
 
 
-gbl_shape_factor = None
-gbl_scale_factor = None
+gbl_shape_factors = None
+gbl_scale_factors = None
 gbl_run_max = None
-def init_basecall_worker(shape_factor, scale_factor, run_max):
-    global gbl_shape_factor, gbl_scale_factor, gbl_run_max
-    gbl_shape_factor = shape_factor
-    gbl_scale_factor = scale_factor
+def init_basecall_worker(shape_factors, scale_factors, run_max):
+    global gbl_shape_factors, gbl_scale_factors, gbl_run_max
+    gbl_shape_factors = shape_factors
+    gbl_scale_factors = scale_factors
     gbl_run_max = run_max
 
 
 def basecall_worker(indata):
     read_name, read_data = indata
-    basecall = runlength_basecall(read_data, gbl_shape_factor, gbl_scale_factor, gbl_run_max)
+    basecall = runlength_basecall(read_data, gbl_shape_factors, gbl_scale_factors, gbl_run_max)
     
     return read_name, basecall
 
@@ -118,7 +124,7 @@ def basecall_worker(indata):
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    init_params = [args.scaling_factor[0], args.scaling_factor[1], args.run_max]
+    init_params = [args.shape, args.scale, args.run_max]
 
     with open(args.file, 'r') as fh:
         with Pool(processes=args.threads, initializer=init_basecall_worker, initargs=init_params) as pool:
