@@ -6,6 +6,7 @@
 #  http://nanoporetech.com
 
 buildDir ?= build
+hdf5Root ?= ''
 releaseType ?= Release
 
 .PHONY: all
@@ -27,6 +28,6 @@ clean:
 
 ${buildDir}/flappie: ${buildDir}
 	cd ${buildDir} && \
-	cmake .. -DCMAKE_BUILD_TYPE=${releaseType} && \
-	make
+	cmake .. -DCMAKE_BUILD_TYPE=${releaseType} -DHDF5_ROOT=${hdf5Root} && \
+	make flappie
     
