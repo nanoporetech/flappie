@@ -7,6 +7,7 @@
 
 buildDir ?= build
 hdf5Root ?= ''
+openblasRoot ?=''
 releaseType ?= Release
 
 .PHONY: all
@@ -28,6 +29,6 @@ clean:
 
 ${buildDir}/flappie: ${buildDir}
 	cd ${buildDir} && \
-	cmake .. -DCMAKE_BUILD_TYPE=${releaseType} -DHDF5_ROOT=${hdf5Root} && \
+	cmake .. -DCMAKE_BUILD_TYPE=${releaseType} -DHDF5_ROOT=${hdf5Root} -DOPENBLAS_ROOT=${openblasRoot} && \
 	make flappie
     
