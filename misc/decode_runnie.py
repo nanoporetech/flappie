@@ -31,7 +31,7 @@ parser.add_argument('--limit', default=None, type=Positive(int),
                     help='Limit number of reads processed')
 parser.add_argument('--run_max', default=50, type=Positive(int),
                     help='Maximum run for mean approximation')
-parser.add_argument('--scale', default=(1.06, 1.08, 1.08, 1.05), nargs=4,
+parser.add_argument('--scale', default=(1.05, 1.08, 1.08, 1.05), nargs=4,
                     metavar=('scaleA', 'scaleC', 'scaleG', 'scaleT'), type=Positive(float),
                     help='Factors for per-base scale parameter')
 parser.add_argument('--shape', default=(1.00, 1.00, 1.00, 1.00), nargs=4,
