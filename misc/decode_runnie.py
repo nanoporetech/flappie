@@ -29,6 +29,10 @@ class Positive(object):
 parser = argparse.ArgumentParser()
 parser.add_argument('--limit', default=None, type=Positive(int),
                     help='Limit number of reads processed')
+parser.add_argument('--rlc', default=False, action='store_true',
+                    help='Call run-length compressed sequence')
+parser.add_argument('--no-rlc', dest='rlc', action='store_false',
+                    help="Don't call run-length compressed sequence")
 parser.add_argument('--run_max', default=50, type=Positive(int),
                     help='Maximum run for mean approximation')
 parser.add_argument('--scale', default=(1.05, 1.08, 1.08, 1.05), nargs=4,
@@ -104,19 +108,20 @@ def read_generator(fh):
     yield read_name, read_data
 
 
-gbl_shape_factors = None
-gbl_scale_factors = None
-gbl_run_max = None
-def init_basecall_worker(shape_factors, scale_factors, run_max):
-    global gbl_shape_factors, gbl_scale_factors, gbl_run_max
-    gbl_shape_factors = shape_factors
-    gbl_scale_factors = scale_factors
-    gbl_run_max = run_max
+gbl_args = None
+def init_basecall_worker(*args):
+    global gbl_args
+    if len(args) > 0:
+        gbl_args = {'shape' : args[0], 'scale' : args[1], 'run_max' : args[2]}
 
 
 def basecall_worker(indata):
     read_name, read_data = indata
-    basecall = runlength_basecall(read_data, gbl_shape_factors, gbl_scale_factors, gbl_run_max)
+    if gbl_args is None:
+        basecall = ''.join([elt[0] for elt in read_data])
+    else:
+        basecall = runlength_basecall(read_data, gbl_args['shape'],
+                                      gbl_args['scale'], gbl_args['run_max'])
 
     return read_name, basecall
 
@@ -124,7 +129,10 @@ def basecall_worker(indata):
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    init_params = [args.shape, args.scale, args.run_max]
+    if args.rlc:
+        init_params = []
+    else:
+        init_params = [args.shape, args.scale, args.run_max]
 
     with open(args.file, 'r') as fh:
         with Pool(processes=args.threads, initializer=init_basecall_worker, initargs=init_params) as pool:

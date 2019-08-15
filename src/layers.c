@@ -16,6 +16,7 @@
 #include "flappie_stdlib.h"
 #include "util.h"
 
+#include <stdio.h>
 
 /**  Apply tanh to a matrix element-wise
  *  @param C Matrix
@@ -1220,3 +1221,142 @@ flappie_matrix globalnorm_runlength(const_flappie_matrix X, const_flappie_matrix
 
     return C;
 }
+
+
+/**  Calculates number of bases
+ *
+ *   @param nparams
+ *
+ *   @returns Number of bases
+ **/
+size_t nbase_from_crf_runlength_nparam(size_t nparam){
+    // By numerical accident, answer is same as flipflip
+    // 2 * nbase * nbase + 2 * nbase
+    return nbase_from_flipflop_nparam(nparam);
+}
+
+static inline size_t rle_trans_lookup(size_t base_from, bool stay_from,
+                                      size_t base_to, bool stay_to,
+                                      size_t nbase){
+    assert(stay_to ^ (base_from != base_to));
+    return base_to * 2 * nbase + base_from + (stay_from ? nbase : 0);
+}
+
+
+/**  Partition function for new version Run-length encoded model
+ *
+ *   @param C Transition parameters runlength model
+ *
+ *   @returns Logarithm of partition function
+ **/
+double runlengthV2_partition_function(const_flappie_matrix C){
+    RETURN_NULL_IF(NULL == C, NAN);
+
+    const size_t nparam = C->nr;
+    const size_t nbase = nbase_from_crf_runlength_nparam(nparam);
+    const size_t nstate = nbase + nbase;
+
+    double * mem = calloc(2 * nstate, sizeof(double));
+    RETURN_NULL_IF(NULL==mem, NAN);
+
+    double * curr = mem;
+    double * prev = mem + nstate;
+
+    for(size_t c=0 ; c < C->nc ; c++){
+        const size_t offset = c * C->stride + nstate;
+        //  Swap
+        {
+            double * tmp = curr;
+            curr = prev;
+            prev = tmp;
+        }
+
+        for(size_t b1=0 ; b1 < nbase ; b1++){
+            curr[b1] = -HUGE_VAL;
+            for(size_t b2=0 ; b2 < nbase ; b2++){
+                if(b1 == b2){
+                    continue;
+                }
+                // Move from different base (move)
+                curr[b1] = logsumexp(curr[b1], prev[b2] + C->data.f[offset + rle_trans_lookup(b2, false, b1, false, nbase)]);
+                // Move from different base (stay)
+                curr[b1] = logsumexp(curr[b1], prev[b2 + nbase] + C->data.f[offset + rle_trans_lookup(b2, true, b1, false, nbase)]);
+            }
+            for(size_t b=0 ; b < nbase ; b++){
+                // Stay in same base
+                curr[b + nbase] = logsumexpf(prev[b] + C->data.f[offset + rle_trans_lookup(b, false, b, true, nbase)],
+                                             prev[b + nbase] + C->data.f[offset + rle_trans_lookup(b, true, b, true, nbase)]);
+            }
+        }
+    }
+
+    double logZ = curr[0];
+    for(size_t st=1 ; st < nstate ; st++){
+        logZ = logsumexp(logZ, curr[st]);
+    }
+
+    free(mem);
+
+    return logZ;
+}
+
+
+/**  Run-length encoded output layer (new version)
+ *
+ *   Performs initial linear transform and then scales all parameters appropriately.
+ *
+ *   Shape parameters (4 parameters per block)
+ *        x -> 1 + softplus(x)
+ *   Scale parameters (4 parameters pe block)
+ *        x -> ETA + softplus(x)
+ *   Transition parameters (32 parameters per block)
+ *        x -> 5 tanh(x), global normalisation over all x
+ *
+ *
+ *   @param X Input to layer
+ *   @param W Weights for initial linear transform
+ *   @param b Bias for initial linear transform
+ *   @param temperature Temperature to normalise transition weights at
+ *   @param C Flappie to write output parameters into.  Allocated if NULL.
+ *
+ *   @returns Parameters for run-length encoded model
+ **/
+flappie_matrix globalnorm_runlengthV2(const_flappie_matrix X, const_flappie_matrix W,
+                                      const_flappie_matrix b, float temperature,
+                                      flappie_matrix C){
+    const float ETA = 1e-1f;
+    C = affine_map(X, W, b, C);
+    RETURN_NULL_IF(NULL == C, NULL);
+    const size_t nbase = nbase_from_crf_runlength_nparam(C->nr);
+    const size_t nrunparam = nbase + nbase;
+
+    for(size_t c=0 ; c < C->nc ; c++){
+        const size_t offset = c * C->stride;
+        for(size_t b=0 ; b < nbase ; b++){
+            //  Shift and scale parameters
+            C->data.f[offset + b] = 1.0f + softplusf(C->data.f[offset + b]);
+            C->data.f[offset + nbase + b] = ETA + softplusf(C->data.f[offset + nbase + b]);
+        }
+        for(size_t param=nrunparam ; param < C->nr ; param++){
+            //  Transition parameters
+            C->data.f[offset + param] = 5.0f * tanhf(C->data.f[offset + param]) / temperature;
+        }
+    }
+
+    const float logZ = runlengthV2_partition_function(C) / (float)C->nc;
+
+    for(size_t c=0 ; c < C->nc ; c++){
+        const size_t offset = c * C->stride;
+        for(size_t r=nrunparam ; r < C->nr ; r++){
+            C->data.f[offset + r] -= logZ;
+        }
+    }
+
+    //   Test partition function
+    const float logZ2 = runlengthV2_partition_function(C);
+    fprintf(stderr, "Partition function %f %f\n", logZ, logZ2);
+
+    return C;
+}
+
+

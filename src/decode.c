@@ -891,3 +891,263 @@ flappie_matrix posterior_runlength(const_flappie_matrix param){
     return post;
 }
 
+
+static inline size_t rle_trans_lookup(size_t base_from, bool stay_from,
+		                      size_t base_to, bool stay_to,
+			              size_t nbase){
+    assert(stay_to ^ (base_from != base_to));
+    return base_to * 2 * nbase + base_from + (stay_from ? nbase : 0);
+}
+
+
+/**  Decoding of CRF runlength model with multiple stay states
+ *
+ *   Runlength models have the restriction that you can't move to the same
+ *   base that you are already in. Once in a move state, the model must
+ *   immediately exit into either the corresponding stay state or a new
+ *   move state.
+ *
+ *   Since this model is globally normalised, sum(exp(weights)) may not sum
+ *   to one.
+ *
+ *   Order of params:  Each column contained 16 entries in the following order:
+ *       0 --  3 : Shape parameter for discrete Weibull distribution [ACGT]
+ *       4 --  7 : Scale parameter for discrete Weibull distribution [ACGT]
+ *       8 -- 39 : Transition parameters
+ *       ...  8 -- 23 : 4 x 4 matrix describing transition from a base-state to
+ *                     base-state.  Diagonal elements are base-state to stay-state
+ *       ... 24 -- 39 : 4 x 4 matrix describing transition from a stay-state to
+ *                     base-state.  Diagonal elements are stay-state to stay-state
+ *
+ *   @param param  Flappie matrix [40 x nblk] containing predicted parameters
+ *   @param path[out] Array to write out best path
+ *
+ *   @returns score of best path
+ **/
+float decode_crf_runlength(const_flappie_matrix param, int * path){
+    RETURN_NULL_IF(NULL == param, NAN);
+    RETURN_NULL_IF(NULL == path, NAN);
+    const size_t nblk = param->nc;
+    const size_t nparam = param->nr;
+    const size_t nbase = nbase_from_crf_runlength_nparam(nparam);
+    const size_t nstate = nbase + nbase;
+
+    float * mem = calloc(2 * nstate, sizeof(float));
+    char * traceback = calloc(nstate * nblk, sizeof(char));
+    if(NULL == mem || NULL == traceback){
+        free(mem);
+        free(traceback);
+        return NAN;
+    }
+
+    float * prev = mem;
+    float * curr = mem + nstate;
+
+    for(size_t blk=0 ; blk < nblk ; blk++){
+        const size_t poffset = blk * param->stride + nbase + nbase;
+        const size_t toffset = blk * nstate;
+        {   //  Swap memory
+            float * tmp;
+            tmp = prev;
+            prev = curr;
+            curr = tmp;
+        }
+
+	for(size_t st=0 ; st < nstate ; st++){
+            curr[st] = -HUGE_VAL;
+	}
+
+	for(size_t b1=0 ; b1 < nbase ; b1++){
+            // Move into new base state.
+	    for(size_t b2=0 ; b2 < nbase ; b2++){
+                if(b1 == b2){
+		    // Can't transition to same base
+		    continue;
+		}
+		// From Move
+		const float move_score = prev[b2] + param->data.f[poffset + rle_trans_lookup(b2, false, b1, false, nbase)];
+		if(move_score > curr[b1]){
+			curr[b1] = move_score;
+			traceback[toffset + b1] = b2;
+		}
+		// From Stay
+		const float stay_score = prev[b2 + nbase] + param->data.f[poffset + rle_trans_lookup(b2, true, b1, false, nbase)];
+		if(stay_score > curr[b1]){
+			curr[b1] = stay_score;
+			traceback[toffset + b1] = b2 + nbase;
+		}
+	    }
+	}
+        for(int b=0 ; b < nbase ; b++){
+            //  Stay state
+            const float stay_score = prev[b + nbase] +  param->data.f[poffset + rle_trans_lookup(b, true, b, true, nbase)];
+            const float move_score = prev[b] +  param->data.f[poffset + rle_trans_lookup(b, false, b, true, nbase)];
+            if(stay_score > move_score){
+                // Come from stay
+                curr[b + nbase] = stay_score;
+                traceback[toffset + b + nbase] = b + nbase;
+            } else {
+		// Come from move
+                curr[b + nbase] = move_score;
+                traceback[toffset + b + nbase] = b;
+	    }
+        }
+    }
+
+
+    size_t last_state = argmaxf(curr, nstate);
+    const float logscore = curr[last_state];
+    for(size_t blk=nblk ; blk > 0 ; blk--){
+        const size_t blkm1 = blk - 1;
+        const char state = traceback[blkm1 * nstate + last_state];
+        path[blkm1] = last_state;
+        last_state = state;
+    }
+
+    free(traceback);
+    free(mem);
+
+    return logscore;
+}
+
+
+ /**  Posterior CRF runlength model with multiple stay states
+  *
+  *   Runlength models have the restriction that you can't move to the same
+  *   base that you are already in. Once in a move state, the model must
+  *   immediately exit into either the corresponding stay state or a new
+  *   move state.
+  *
+  *   Since this model is globally normalised, sum(exp(weights)) may not sum
+  *   to one.
+  *
+  *   Order of params:  Each column contained 16 entries in the following order:
+  *       0 --  3 : Shape parameter for discrete Weibull distribution [ACGT]
+  *       4 --  7 : Scale parameter for discrete Weibull distribution [ACGT]
+  *       8 -- 39 : Transition parameters
+  *       ...  8 -- 23 : 4 x 4 matrix describing transition from a base-state to
+  *                     base-state.  Diagonal elements are base-state to stay-state
+  *       ... 24 -- 39 : 4 x 4 matrix describing transition from a stay-state to
+  *                     base-state.  Diagonal elements are stay-state to stay-state
+  *
+  *   @param param  Flappie matrix [40 x nblk] containing predicted parameters
+  *
+  *   @returns score of best path
+  **/
+flappie_matrix transpost_crf_runlength(const_flappie_matrix param){
+    RETURN_NULL_IF(NULL == param, NULL);
+    const size_t nblk = param->nc;
+    const size_t nparam = param->nr;
+    const size_t nbase = nbase_from_crf_runlength_nparam(nparam);
+    const size_t nstate = nbase + nbase;
+    const size_t param_offset = nbase + nbase;
+
+    flappie_matrix fwd = make_flappie_matrix(nstate, nblk + 1);
+    flappie_matrix post = make_flappie_matrix(nparam, nblk);
+    float * mem = calloc(2 * nstate, sizeof(float));
+    if(NULL == fwd || NULL == post || NULL == mem){
+        fwd = free_flappie_matrix(fwd);
+        post = free_flappie_matrix(post);
+        free(mem);
+        return NULL;
+    }
+
+
+    for(size_t blk=0 ; blk < nblk ; blk++){
+        //  Forwards calculation
+        const size_t offset = blk * param->stride + param_offset;
+        float * prev = fwd->data.f + blk * fwd->stride;
+        float * curr = prev + fwd->stride;
+
+        for(size_t b1=0 ; b1 < nbase ; b1++){
+            curr[b1] = -HUGE_VAL;
+            // Move from different base or stay
+            for(size_t b2=0 ; b2 < nbase ; b2++){
+                if(b1 == b2){
+		    continue;
+		}
+		const float stay_score = prev[b2 + nbase] + param->data.f[offset + rle_trans_lookup(b2, true, b1, false, nbase)];
+		const float move_score = prev[b2] + param->data.f[offset + rle_trans_lookup(b2, false, b1, false, nbase)];
+		const float sum_score = logsumexpf(stay_score, move_score);
+                curr[b1] = logsumexpf(curr[b1], sum_score);
+            }
+        }
+        for(size_t b=0 ; b < nbase ; b++){
+            // Stay in same base
+	    const float stay_score = prev[b + nbase] + param->data.f[offset + rle_trans_lookup(b, true, b, true, nbase)];
+	    const float move_score = prev[b] + param->data.f[offset + rle_trans_lookup(b, false, b, true, nbase)];
+	    curr[b + nbase] = logsumexpf(stay_score, move_score);
+        }
+    }
+
+
+    float * prev = mem;
+    float * curr = prev + nstate;
+    for(size_t blk=nblk ; blk > 0 ; blk--){
+        const size_t foffset = (blk - 1) * fwd->stride;
+        const size_t offset = (blk - 1) * param->stride + param_offset;
+
+        // Backwards
+        {  // swap
+            float * tmp = curr;
+            curr = prev;
+            prev = tmp;
+        }
+
+        for(size_t b1=0 ; b1 < nbase ; b1++){
+            curr[b1] = -HUGE_VAL;
+            curr[b1 + nbase] = -HUGE_VAL;
+            // Move to different base
+            for(size_t b2=0 ; b2 < nbase ; b2++){
+                if(b1 == b2){
+		    continue;
+		}
+		// b1 is a move state
+		const size_t move_idx = rle_trans_lookup(b1, false, b2, false, nbase);
+                curr[b1] = logsumexpf(curr[b1], prev[b2] + param->data.f[offset +  move_idx]);
+                post->data.f[offset + move_idx] = fwd->data.f[foffset + b1] + prev[b2] + param->data.f[offset + move_idx];
+		// b1 is a stay state
+		const size_t stay_idx = rle_trans_lookup(b1, true, b2, false, nbase);
+                curr[b1 + nbase] = logsumexpf(curr[b1 + nbase], prev[b2] + param->data.f[offset +  stay_idx]);
+                post->data.f[offset + stay_idx] = fwd->data.f[foffset + b1 + nbase] + prev[b2] + param->data.f[offset + stay_idx];
+            }
+        }
+
+        for(size_t b=0 ; b < nbase ; b++){
+            // Stay in same base, initial state is move
+            const size_t idx = rle_trans_lookup(b, false, b, true, nbase);
+            curr[b] = logsumexpf(curr[b], prev[b + nbase] + param->data.f[offset + idx]);
+            post->data.f[offset + idx] = fwd->data.f[foffset + b] + param->data.f[offset + idx] + prev[b + nbase];
+	}
+	for(size_t b=0 ; b < nbase ; b++){
+            // Stay in same base, initial state is stay
+            const size_t idx = rle_trans_lookup(b, true, b, true, nbase);
+            curr[b + nbase] = logsumexpf(curr[b + nbase], prev[b + nbase] + param->data.f[offset + idx]);
+            post->data.f[offset + idx] = fwd->data.f[foffset + b + nbase] + param->data.f[offset + idx] + prev[b + nbase];
+        }
+
+	/*
+        float score = curr[0] + fwd->data.f[foffset + 0];
+        for(size_t i=1 ; i < nstate ; i++){
+            score = logsumexpf(score, curr[i] + fwd->data.f[foffset + i]);
+        }
+        printf("score for blk %zu : %f\n", blk - 1, score);
+	*/
+    }
+
+    /*
+    const size_t last_offset = nblk * fwd->stride;
+    float scoreF = fwd->data.f[last_offset];
+    float scoreB = curr[0];
+    for(size_t st=1 ; st < nstate ; st ++){
+        scoreF = logsumexpf(scoreF, fwd->data.f[last_offset + st]);
+        scoreB = logsumexpf(scoreB, curr[st]);
+    }
+    printf("ScoreF = %f  scoreB = %f\n", scoreF, scoreB);
+    */
+
+    free(mem);
+    fwd = free_flappie_matrix(fwd);
+
+    return post;
+}

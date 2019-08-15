@@ -61,7 +61,7 @@ static struct argp_option options[] = {
 };
 
 
-#define DEFAULT_MODEL RUNNIE_MODEL_R941_NATIVE
+#define DEFAULT_MODEL RUNNIE_NEWMODEL_R941_NATIVE
 
 struct arguments {
     int compression_level;
@@ -236,28 +236,30 @@ static void calculate_post(char * filename, enum model_type model){
 
     const size_t nblock = trans_weights->nc;
     const size_t nparam = trans_weights->nr;
-    const size_t nbase = nbase_from_runlength_nparam(nparam);
+    const size_t nbase = nbase_from_crf_runlength_nparam(nparam);
     int * path = calloc(nblock + 2, sizeof(int));
 
     float score = NAN;
 
-    flappie_matrix posterior = posterior_runlength(trans_weights);
-    score = decode_runlength(posterior, path);
-    fprintf(args.output, "# %s\n", rt.uuid);
+    flappie_matrix transpost = transpost_crf_runlength(trans_weights);
+    score = decode_crf_runlength(transpost, path);
+    fprintf(args.output, "# %s\t%zu\n", rt.uuid, nbase);
     for(size_t blk=0 ; blk < nblock ; blk++){
-        if(path[blk] < 0){
+        if(path[blk] >= nbase){
             // Short circuit non-base
             continue;
         }
         const size_t offset = blk * trans_weights->stride;
         const int base = path[blk];
+	const float shape = trans_weights->data.f[offset + base];
+	const float scale = trans_weights->data.f[offset + nbase + base];
         fprintf(args.output, "%c\t%a\t%a\n",
-                basechar(base),
-                trans_weights->data.f[offset + base],
-                trans_weights->data.f[offset + nbase + base]);
+                basechar(base), shape, scale);
+        //fprintf(args.output, "%c\t%f\t%f\t%f\n",
+        //        basechar(base), shape, scale, 1.0 + scale * expf(log1pf( - 1.0 / shape) / shape));
     }
 
-    posterior = free_flappie_matrix(posterior);
+    transpost = free_flappie_matrix(transpost);
     free(path);
     trans_weights = free_flappie_matrix(trans_weights);
     free_raw_table(&rt);

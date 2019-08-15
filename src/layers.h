@@ -94,4 +94,8 @@ size_t nbase_from_runlength_nparam(size_t nparam);
 flappie_matrix globalnorm_runlength(const_flappie_matrix X, const_flappie_matrix W,
                                     const_flappie_matrix b, float temperature,
                                     flappie_matrix C);
+size_t nbase_from_crf_runlength_nparam(size_t nparam);
+flappie_matrix globalnorm_runlengthV2(const_flappie_matrix X, const_flappie_matrix W,
+                                      const_flappie_matrix b, float temperature,
+                                      flappie_matrix C);
 #endif                          /* LAYERS_H */
