@@ -34,6 +34,11 @@ cd flappie
 make flappie
 ```
 
+An alternative location for the HDF5 library, for example one installed by `brew`, can be specified as:
+```bash
+hdf5Root=/usr/local/ make flappie
+```
+
 ### Compilation From Source
 Flappie has the following dependences
 * [Cmake](https://cmake.org/) for building
