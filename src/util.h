@@ -1,7 +1,7 @@
 /*  Copyright 2018 Oxford Nanopore Technologies, Ltd */
 
 /*  This Source Code Form is subject to the terms of the Oxford Nanopore
- *  Technologies, Ltd. Public License, v. 1.0. If a copy of the License 
+ *  Technologies, Ltd. Public License, v. 1.0. If a copy of the License
  *  was not  distributed with this file, You can obtain one at
  *  http://nanoporetech.com
  */
@@ -84,6 +84,10 @@ static inline float softplusf(float x){
     return log1pf(expf(-fabsf(x))) + ((x >= 0.0f) ? x : 0.f);
 }
 
+static inline float powm1f(float x, float y){
+    return expm1f(y * logf(x));
+}
+
 
 /**
  *   Laplace distribution and derivatives
@@ -129,7 +133,6 @@ static inline float logdnegbinomf(float k, float r, float p){
 }
 
 
-
 /**
  *   Logistic distribution
  **/
@@ -149,6 +152,91 @@ static inline float dlogisticf(float x){
     const float p = plogisticf(x);
     return p * (1.0f - p);
 }
+
+
+/**
+ *    Weibull distribution
+ **/
+static inline float pweibullf(float x, float sh, float sc){
+    //  Cumulative density function of Weibull distribution
+    assert(x >= 0.0);
+    assert(sh > 0.0);
+    assert(sc > 0.0);
+    const float xsc = x / sc;
+    const float p1 = powf(xsc, sh);
+    return -expm1(-p1);
+}
+
+static inline float logpweibullf(float x, float sh, float sc){
+    //  Log cumulative density function of Weibull distribution
+    assert(x >= 0.0);
+    assert(sh > 0.0);
+    assert(sc > 0.0);
+    const float xsc = x / sc;
+    const float p1 = powf(xsc, sh);
+    return logf(-expm1(-p1));
+}
+
+static inline float logcpweibullf(float x, float sh, float sc){
+    //  Log complementary CDF of Weibull distribution
+    assert(x >= 0.0);
+    assert(sh > 0.0);
+    assert(sc > 0.0);
+    const float xsc = x / sc;
+    const float p1 = powf(xsc, sh);
+    return -p1;
+}
+
+static inline float dweibullf(float x, float sh, float sc){
+    //  density of Weibull distribution
+    assert(x >= 0.0);
+    assert(sh > 0.0);
+    assert(sc > 0.0);
+    const float xsc = x / sc;
+    const float p1 = powf(xsc, sh);
+    return sh * p1 * expf(-p1) / x;
+}
+
+
+/**
+ *   Discrete Weibull distribution
+ **/
+static inline float pdiscreteweibullf(float x, float sh, float sc){
+    //  CDF of the Discrete Weibull distribution
+    assert(x >= 0.0);
+    assert(sh > 0.0);
+    assert(sc > 0.0);
+    return pweibullf(x + 1.0f, sh, sc);
+}
+
+static inline float logpdiscreteweibullf(float x, float sh, float sc){
+    //  Log CDF of the Discrete Weibull distribution
+    assert(x >= 0.0);
+    assert(sh > 0.0);
+    assert(sc > 0.0);
+    return logpweibullf(x + 1.0f, sh, sc);
+}
+
+static inline float logcpdiscreteweibullf(float x, float sh, float sc){
+    //  Log complementary CDF of the Discrete Weibull distribution
+    assert(x >= 0.0);
+    assert(sh > 0.0);
+    assert(sc > 0.0);
+    return logcpweibullf(x + 1.0f, sh, sc);
+}
+
+static inline float ddiscreteweibullf(float x, float sh, float sc){
+    //  probability mass function of Discrete Weibull distribution
+    assert(x >= 0.0);
+    assert(sh > 0.0);
+    assert(sc > 0.0);
+    const float log_cprob1 = -powf(x / sc, sh);
+    const float log_cprob2 = -powf((x + 1.0f) / sc, sh);
+    const float delta_log_cprob = -log_cprob2 * powm1f(x / (1.0f + x), sh);
+    return -expf(log_cprob1) * expm1f(delta_log_cprob);
+}
+
+
 
 
 // Constants for fast exp approximation.  See Schraudolph (1999)

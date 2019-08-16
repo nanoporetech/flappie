@@ -1,7 +1,7 @@
 /*  Copyright 2018 Oxford Nanopore Technologies, Ltd */
 
 /*  This Source Code Form is subject to the terms of the Oxford Nanopore
- *  Technologies, Ltd. Public License, v. 1.0. If a copy of the License 
+ *  Technologies, Ltd. Public License, v. 1.0. If a copy of the License
  *  was not  distributed with this file, You can obtain one at
  *  http://nanoporetech.com
  */
@@ -84,8 +84,18 @@ void lstm_step(const_flappie_matrix x, const_flappie_matrix out_prev,
 
 double crf_manystay_partition_function(const_flappie_matrix C);
 flappie_matrix globalnorm_manystay(const_flappie_matrix X, const_flappie_matrix W,
-                                    const_flappie_matrix b, float temperature, flappie_matrix C);
+                                   const_flappie_matrix b, float temperature,
+                                   flappie_matrix C);
 size_t nbase_from_flipflop_nparam(size_t nparam);
 flappie_matrix globalnorm_flipflop(const_flappie_matrix X, const_flappie_matrix W,
-                                    const_flappie_matrix b, float temperature, flappie_matrix C);
+                                   const_flappie_matrix b, float temperature,
+                                   flappie_matrix C);
+size_t nbase_from_runlength_nparam(size_t nparam);
+flappie_matrix globalnorm_runlength(const_flappie_matrix X, const_flappie_matrix W,
+                                    const_flappie_matrix b, float temperature,
+                                    flappie_matrix C);
+size_t nbase_from_crf_runlength_nparam(size_t nparam);
+flappie_matrix globalnorm_runlengthV2(const_flappie_matrix X, const_flappie_matrix W,
+                                      const_flappie_matrix b, float temperature,
+                                      flappie_matrix C);
 #endif                          /* LAYERS_H */

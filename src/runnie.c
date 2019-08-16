@@ -28,7 +28,7 @@
 #if !defined(FLAPPIE_VERSION)
 #    define FLAPPIE_VERSION "unknown"
 #endif
-const char *argp_program_version = "flappie " FLAPPIE_VERSION;
+const char *argp_program_version = "runnie " FLAPPIE_VERSION;
 const char *argp_program_bug_address = "<tim.massingham@nanoporetech.com>";
 
 // Doesn't play nice with other headers, include last
@@ -37,23 +37,23 @@ const char *argp_program_bug_address = "<tim.massingham@nanoporetech.com>";
 
 extern const char *argp_program_version;
 extern const char *argp_program_bug_address;
-static char doc[] = "Flappie basecaller -- basecall from raw signal";
+static char doc[] = "Runnie basecaller -- basecall from raw signal";
 static char args_doc[] = "fast5 [fast5 ...]";
 static struct argp_option options[] = {
-    {"format", 'f', "format", 0, "Format to output reads (FASTA or SAM)"},
+    //{"format", 'f', "format", 0, "Format to output reads (FASTA or SAM)"},
     {"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)"},
-    {"model", 'm', "name", 0, "Model to use (\"help\" to list)"},
+    //{"model", 'm', "name", 0, "Model to use (\"help\" to list)"},
     {"output", 'o', "filename", 0, "Write to file rather than stdout"},
     {"prefix", 'p', "string", 0, "Prefix to append to name of each read"},
     {"temperature", 7, "factor", 0, "Temperature for weights"},
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
-    {"trace", 'T', "filename", 0, "Dump trace to HDF5 file"},
+    //{"trace", 'T', "filename", 0, "Dump trace to HDF5 file"},
     {"licence", 10, 0, 0, "Print licensing information"},
     {"license", 11, 0, OPTION_ALIAS, "Print licensing information"},
     {"segmentation", 3, "chunk:percentile", 0, "Chunk size and percentile for variance based segmentation"},
-    {"hdf5-compression", 12, "level", 0,
-     "Gzip compression level for HDF5 output (0:off, 1: quickest, 9: best)"},
-    {"hdf5-chunk", 13, "size", 0, "Chunk size for HDF5 output"},
+    //{"hdf5-compression", 12, "level", 0,
+    // "Gzip compression level for HDF5 output (0:off, 1: quickest, 9: best)"},
+    //{"hdf5-chunk", 13, "size", 0, "Chunk size for HDF5 output"},
 
     {"uuid", 14, 0, 0, "Output UUID"},
     {"no-uuid", 15, 0, OPTION_ALIAS, "Output read file"},
@@ -61,7 +61,7 @@ static struct argp_option options[] = {
 };
 
 
-#define DEFAULT_MODEL FLAPPIE_MODEL_R941_NATIVE
+#define DEFAULT_MODEL RUNNIE_NEWMODEL_R941_NATIVE
 
 struct arguments {
     int compression_level;
@@ -88,7 +88,7 @@ static struct arguments args = {
     .limit = 0,
     .model = DEFAULT_MODEL,
     .output = NULL,
-    .outformat = FLAPPIE_OUTFORMAT_FASTQ,
+    .outformat = FLAPPIE_OUTFORMAT_FASTA,
     .prefix = "",
     .temperature = 1.0f,
     .trim_start = 200,
@@ -117,16 +117,17 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
     char * next_tok = NULL;
 
     switch(key){
-    case 'f':
+    /*case 'f':
         args.outformat = get_outformat(arg);
         if(FLAPPIE_OUTFORMAT_INVALID == args.outformat){
             errx(EXIT_FAILURE, "Unrecognised output format \"%s\".", arg);
         }
-        break;
+        break;*/
     case 'l':
         args.limit = atoi(arg);
         assert(args.limit > 0);
         break;
+    /*
     case 'm':
         if(0 == strcasecmp(arg, "help")){
             fprint_flappie_models(stdout, DEFAULT_MODEL);
@@ -138,7 +139,7 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
             fprint_flappie_models(stdout, DEFAULT_MODEL);
             exit(EXIT_FAILURE);
         }
-        break;
+        break;*/
     case 'o':
         args.output = fopen(arg, "w");
         if(NULL == args.output){
@@ -159,9 +160,10 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
         assert(args.trim_start >= 0);
         assert(args.trim_end >= 0);
         break;
+    /*
     case 'T':
         args.trace = arg;
-        break;
+        break;*/
     case 3:
         args.varseg_chunk = atoi(strtok(arg, ":"));
         next_tok = strtok(NULL, ":");
@@ -181,6 +183,7 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
         ret = fputs(flappie_licence_text, stdout);
         exit((EOF != ret) ? EXIT_SUCCESS : EXIT_FAILURE);
         break;
+    /*
     case 12:
         args.compression_level = atoi(arg);
         assert(args.compression_level >= 0 && args.compression_level <= 9);
@@ -188,7 +191,7 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
     case 13:
         args.compression_chunk_size = atoi(arg);
         assert(args.compression_chunk_size > 0);
-        break;
+        break;*/
     case 14:
         args.uuid = true;
         break;
@@ -214,63 +217,52 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
 static struct argp argp = {options, parse_arg, args_doc, doc};
 
 
-static struct _raw_basecall_info calculate_post(char * filename, enum model_type model){
-    RETURN_NULL_IF(NULL == filename, (struct _raw_basecall_info){0});
+static void calculate_post(char * filename, enum model_type model){
+    RETURN_NULL_IF(NULL == filename, );
 
     raw_table rt = read_raw(filename, true);
-    RETURN_NULL_IF(NULL == rt.raw, (struct _raw_basecall_info){0});
+    RETURN_NULL_IF(NULL == rt.raw, );
 
     rt = trim_and_segment_raw(rt, args.trim_start, args.trim_end, args.varseg_chunk, args.varseg_thresh);
-    RETURN_NULL_IF(NULL == rt.raw, (struct _raw_basecall_info){0});
+    RETURN_NULL_IF(NULL == rt.raw, );
 
     medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
 
     flappie_matrix trans_weights = calculate_transitions(rt, args.temperature, model);
     if (NULL == trans_weights) {
-        free(rt.raw);
-        free(rt.uuid);
-        return (struct _raw_basecall_info){0};
+        free_raw_table(&rt);
+        return;
     }
 
-    const size_t nbase = nbase_from_flipflop_nparam(trans_weights->nr);
     const size_t nblock = trans_weights->nc;
+    const size_t nparam = trans_weights->nr;
+    const size_t nbase = nbase_from_crf_runlength_nparam(nparam);
     int * path = calloc(nblock + 2, sizeof(int));
-    int * path_idx = calloc(nblock + 2, sizeof(int));
-    float * qpath = calloc(nblock + 2, sizeof(float));
-    int * pos = calloc(nblock + 1, sizeof(int));
 
     float score = NAN;
 
-    flappie_matrix posterior = transpost_crf_flipflop(trans_weights, true);
-    score = decode_crf_flipflop(posterior, false, path, qpath);
-    size_t path_nidx = change_positions(path, nblock, path_idx);
-
-    char * basecall = calloc(path_nidx + 1, sizeof(char));
-    char * quality = calloc(path_nidx + 1, sizeof(char));
-    for(size_t i=0 ; i < path_nidx ; i++){
-        const size_t idx = path_idx[i];
-        basecall[i] = base_lookup[path[idx] % nbase];
-        quality[i] = phredf(expf(qpath[idx]));
+    flappie_matrix transpost = transpost_crf_runlength(trans_weights);
+    score = decode_crf_runlength(transpost, path);
+    fprintf(args.output, "# %s\n", rt.uuid);
+    for(size_t blk=0 ; blk < nblock ; blk++){
+        if(path[blk] >= nbase){
+            // Short circuit non-base
+            continue;
+        }
+        const size_t offset = blk * trans_weights->stride;
+        const int base = path[blk];
+	const float shape = trans_weights->data.f[offset + base];
+	const float scale = trans_weights->data.f[offset + nbase + base];
+        fprintf(args.output, "%c\t%a\t%a\n",
+                basechar(base), shape, scale);
+        //fprintf(args.output, "%c\t%f\t%f\t%f\n",
+        //        basechar(base), shape, scale, 1.0 + scale * expf(log1pf( - 1.0 / shape) / shape));
     }
 
-    exp_activation_inplace(posterior);
-    flappie_imatrix trace = trace_from_posterior(posterior);
-    posterior = free_flappie_matrix(posterior);
-    free(qpath);
-    free(path_idx);
+    transpost = free_flappie_matrix(transpost);
     free(path);
     trans_weights = free_flappie_matrix(trans_weights);
-    const size_t basecall_length = strlen(basecall);
-
-    return (struct _raw_basecall_info) {
-    	.score = score,
-        .rt = rt,
-        .basecall = basecall,
-        .quality = quality,
-        .basecall_length = basecall_length,
-        .trace = trace,
-        .pos = pos,
-        .nblock = nblock};
+    free_raw_table(&rt);
 }
 
 
@@ -326,20 +318,7 @@ int main(int argc, char * argv[]){
             reads_started += 1;
 
             char * filename = globbuf.gl_pathv[fn2];
-            struct _raw_basecall_info res = calculate_post(filename, args.model);
-            if(NULL == res.basecall){
-                warnx("No basecall returned for %s", filename);
-                continue;
-            }
-
-            fprintf_format(args.outformat, args.output, res.rt.uuid,
-                           basename(filename), args.uuid, args.prefix, res);
-
-            write_summary(hdf5out, args.uuid ? res.rt.uuid : basename(filename), res,
-                          args.compression_chunk_size, args.compression_level);
-
-
-            free_raw_basecall_info(&res);
+            calculate_post(filename, args.model);
         }
         globfree(&globbuf);
     }
