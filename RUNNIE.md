@@ -8,7 +8,7 @@ bases (homopolymers) are called and so one call may represent many bases of the
 same type.
 
 Run-length encoding separates a sequence into two parts: a run-length
-compressed sequencing containing only the identites of each run of bases, and
+compressed sequencing containing only the identities of each run of bases, and
 the corresponding length of each run.  Factorising in this manner has a
 particular advantage for Oxford Nanopore reads since the identity of a
 homopolymer is separated from its length.  Since homopolymer indels are a
