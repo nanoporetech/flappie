@@ -7,6 +7,8 @@
 
 Basecall Fast5 reads using _flip-flop_ basecalling.  
 
+For _run-length encoded_ basecalling, see [Runnie](RUNNIE.md)
+
 ## Features
 
 * Flip-flop basecalling for the MinION platform
