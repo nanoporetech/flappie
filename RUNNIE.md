@@ -15,9 +15,9 @@ homopolymer is separated from its length.  Since homopolymer indels are a
 significant class of error in single-read Nanopore basecalls, calls in "RLC" space
 are more accurate and so may led to better mapping and consensus results.
 
-   Sequence                CACCTTTTTTTGTAACGCTAAAGTCTCTTTTCAAACTTGCATTTTTGTAA
-   Run-Length Compressed   CAC T      GTA CGCTA  GTCTCT   CA  CT GCAT    GTA
-   Run-Lengths             112 7      112 11113  111114   13  12 1115    112
+    Sequence                CACCTTTTTTTGTAACGCTAAAGTCTCTTTTCAAACTTGCATTTTTGTAA
+    Run-Length Compressed   CAC T      GTA CGCTA  GTCTCT   CA  CT GCAT    GTA
+    Run-Lengths             112 7      112 11113  111114   13  12 1115    112
 
 
 ##  Installation
