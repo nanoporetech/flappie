@@ -33,5 +33,5 @@ clean:
 ${buildDir}/flappie ${buildDir}/runnie: ${buildDir}
 	cd ${buildDir} && \
 	cmake .. -DCMAKE_BUILD_TYPE=${releaseType} -DHDF5_ROOT=${hdf5Root} && \
-	make flappie
+	make flappie runnie
     
