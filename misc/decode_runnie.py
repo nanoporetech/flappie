@@ -54,7 +54,9 @@ def pow1p(x, y):
 
 def run_estimate_mode(shape, scale, imax=50):
     inv_shape = np.reciprocal(shape)
-    run_mode = 1 + np.floor(scale * np.where(shape > 1.0, pow1p(-inv_shape, inv_shape), 0.0))
+    if shape <= 1.0:
+        return 1
+    run_mode = 1 + np.floor(scale * pow1p(-inv_shape, inv_shape))
     return run_mode.astype(int)
 
 
