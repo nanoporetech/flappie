@@ -3,8 +3,6 @@ import argparse
 from itertools import islice
 from multiprocessing import Pool
 import numpy as np
-import sys
-
 
 
 class Positive(object):
@@ -41,7 +39,7 @@ parser.add_argument('--scale', default=(1.00, 1.00, 1.00, 1.00), nargs=4,
 parser.add_argument('--shape', default=(1.00, 1.00, 1.00, 1.00), nargs=4,
                     metavar=('shapeA', 'shapeC', 'shapeG', 'shapeT'), type=Positive(float),
                     help='Factors for per-base shape parameter')
-parser.add_argument('--threads', default=1, type=Positive(int),
+parser.add_argument('-t', '--threads', default=1, type=Positive(int),
                     help='Number of threads to use')
 parser.add_argument('--width', default=60, type=Positive(int),
                     help='Line width for Fasta output')
@@ -53,15 +51,17 @@ def pow1p(x, y):
 
 
 def run_estimate_mode(shape, scale, imax=50):
+    if shape <= 1.0:
+        return 1
     inv_shape = np.reciprocal(shape)
-    run_mode = 1 + np.floor(scale * np.where(shape > 1.0, pow1p(-inv_shape, inv_shape), 0.0))
+    run_mode = 1 + np.floor(scale * pow1p(-inv_shape, inv_shape))
     return run_mode.astype(int)
 
 
 baseidx = {b : i for i, b in enumerate('ACGT')}
 def runlength_basecall(read_data, shapef, scalef, imax=50):
-    return ''.join([b * run_estimate_mode(sh * shapef[baseidx[b]],
-                                          sc * scalef[baseidx[b]], imax=imax)
+    return ''.join([b * run_estimate_mode(float.fromhex(sh) * shapef[baseidx[b]],
+                                          float.fromhex(sc) * scalef[baseidx[b]], imax=imax)
                     for b, sh, sc in read_data])
 
 
@@ -76,8 +76,7 @@ def read_generator(fh):
             read_name = line[2:-1]
             read_data = []
         else:
-            base, shape, scale = line.split('\t')
-            read_data.append((base, float.fromhex(shape), float.fromhex(scale)))
+            read_data.append(line.split('\t'))
     yield read_name, read_data
 
 
