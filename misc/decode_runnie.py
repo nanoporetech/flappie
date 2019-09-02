@@ -46,15 +46,38 @@ parser.add_argument('--width', default=60, type=Positive(int),
 parser.add_argument('file', default='/dev/stdin', nargs='?')
 
 
+def weibull_pmf(x, shape, scale):
+    """ weibull pmf for x - 1 """
+    a = np.power((x - 1) / scale, shape)
+    b = np.power(x / scale, shape)
+    return np.exp(-a) - np.exp(-b)
+
+
 def pow1p(x, y):
     return np.exp(y * np.log1p(x))
 
 
-def run_estimate_mode(shape, scale, imax=50):
+def run_estimate_mode(shape, scale, imax=50, threshold=0.1):
     if shape <= 1.0:
         return 1
     inv_shape = np.reciprocal(shape)
-    run_mode = 1 + np.floor(scale * pow1p(-inv_shape, inv_shape))
+    pdf_mode = scale * pow1p(-inv_shape, inv_shape)
+    run_mode = np.int32(1 + np.floor(pdf_mode))
+
+    delta = np.round(pdf_mode) - pdf_mode
+
+    if np.abs(delta) < threshold:
+
+        prob = weibull_pmf(run_mode, shape, scale)
+
+        if prob < 0.5 and delta < 0 and run_mode > 1:
+            if weibull_pmf(run_mode - 1, shape, scale) > prob:
+                run_mode -= 1
+
+        if prob < 0.5 and delta > 0:
+            if weibull_pmf(run_mode + 1, shape, scale) > prob:
+                run_mode += 1
+
     return run_mode.astype(int)
 
 
