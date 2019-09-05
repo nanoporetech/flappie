@@ -22,7 +22,7 @@ ${buildDir}:
 	mkdir ${buildDir}
 
 .PHONY: test
-test: ${buildDir}/flappie
+test: ${buildDir}/flappie ${buildDir}/runnie ${buildDir}/flappie_unittest
 	cd ${buildDir} && \
 	make test
 
@@ -30,8 +30,7 @@ test: ${buildDir}/flappie
 clean:
 	rm -rf ${buildDir} flappie runnie
 
-${buildDir}/flappie ${buildDir}/runnie: ${buildDir}
+${buildDir}/%: ${buildDir}
 	cd ${buildDir} && \
 	cmake .. -DCMAKE_BUILD_TYPE=${releaseType} -DHDF5_ROOT=${hdf5Root} && \
-	make flappie
-    
+	make $*
