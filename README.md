@@ -153,6 +153,23 @@ oid sha256:83e2b2fe5fd1c3d9646e7a6ea76e646beb50ad6a5fe17e5da0c76c13bd907cb4
             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ```
 
+####  RedHat and Centos systems
+Redhat and Centos systems install `openblas` as a separate library, leading to
+errors of the following form since `blas` cannot be found:
+
+```
+[ 84%] Linking C executable flappie
+/usr/bin/ld: cannot find -lblas
+collect2: ld returned 1 exit
+status make[4]: *** [flappie] Error 1
+```
+   
+While neither RedHat nor Centos are tested or supported, we have added an
+argument to assist compiling `flappie` on these platforms.
+```
+make openblasRedHat=1 flappie
+```
+
 ###  High system load
 Extremely high system load can arise when Flappie is run using
 `parallel` and OpenBLAS is used in multi-threaded mode.  Running in this

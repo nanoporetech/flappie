@@ -7,6 +7,8 @@
 
 buildDir ?= build
 hdf5Root ?= ''
+openblasRedHat ?= ''
+openblasRoot ?= ''
 releaseType ?= Release
 
 .PHONY: all
@@ -32,5 +34,8 @@ clean:
 
 ${buildDir}/%: ${buildDir}
 	cd ${buildDir} && \
-	cmake .. -DCMAKE_BUILD_TYPE=${releaseType} -DHDF5_ROOT=${hdf5Root} && \
+	cmake .. -DCMAKE_BUILD_TYPE=${releaseType} \
+	         -DHDF5_ROOT=${hdf5Root} \
+	         -DOPENBLAS_REDHAT=${openblasRedHat} \
+	         -DOPENBLAS_ROOT=${openblasRoot} && \
 	make $*
