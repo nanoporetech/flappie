@@ -105,7 +105,7 @@ colour_scheme = { 'default' :
                   'friendly' : # http://jfly.iam.u-tokyo.ac.jp/color/#pallet
                           { 'A' : '#009e73', 'C' : '#0072b2', 'G' : '#f0e442', 'T' : '#d55e00',
                             'Z' : '#cc79a7', 'N' : '#808080'},
-                  'traditional' : 
+                  'traditional' :
                           { 'A' : 'green', 'C' : 'blue', 'G' : 'gold', 'T' : 'red',
                             'Z' : 'purple', 'N' : 'grey'}}
 
@@ -151,7 +151,7 @@ if __name__ == '__main__':
                 file_type = FileType.multi_read_fast5
         else:
             file_type = FileType.flappie_trace
-  
+
         if file_type == FileType.flappie_trace:
             #  Flappie format
             reads = list(h5.keys())
@@ -167,32 +167,52 @@ if __name__ == '__main__':
         for read in reads:
             if file_type == FileType.flappie_trace:
                #  Flappie format
-               sig = h5[posixpath.join(read, 'signal')][()]
-               trace = h5[posixpath.join(read, 'trace')][()] / 255.0
+               try:
+                   sig = h5[posixpath.join(read, 'signal')][()]
+                   trace = h5[posixpath.join(read, 'trace')][()] / 255.0
+               except KeyError:
+                   print("Error: failed to read signal and trace for {} (Flappie trace file)".format(read))
+                   continue
             else:
                #  Guppy
                if file_type == FileType.single_read_fast5:
                    #  Guppy single-read
                    readh5 = h5
                    readno = list(readh5[posixpath.join('Raw', 'Reads')].keys())[0]
-                   sig = readh5[posixpath.join('Raw', 'Reads', readno, 'Signal')][()] / 255.0
+                   try:
+                       sig = readh5[posixpath.join('Raw', 'Reads', readno, 'Signal')][()] / 255.0
+                   except KeyError:
+                       print("Error: failed to read signal and trace for {} (Guppy single-read file)".format(read))
+                       continue
                else:
                    #  Guppy multi-read
                    readh5 = h5[read]
-                   sig = readh5[posixpath.join('Raw', 'Signal')][()] / 255.0
+                   try:
+                       sig = readh5[posixpath.join('Raw', 'Signal')][()] / 255.0
+                   except KeyError:
+                       print("Error: failed to read signal and trace for {} (Guppy multi-read file)".format(read))
+                       continue
 
-               trace = readh5[posixpath.join('Analyses', 'Basecall_1D_{:03d}'.format(args.analysis),
-                                             'BaseCalled_template', 'Trace')][()]
+               try:
+                   trace = readh5[posixpath.join('Analyses', 'Basecall_1D_{:03d}'.format(args.analysis),
+                                                 'BaseCalled_template', 'Trace')][()]
+               except KeyError:
+                   print("Error: trace table for {} not found in file -- did Guppy write it?".format(read))
+                   continue
+
                segpath = posixpath.join('Analyses', 'Segmentation_{:03d}'.format(args.analysis),
                                         'Summary', 'segmentation')
-               sig_start = readh5[segpath].attrs['first_sample_template']
-               sig_length = readh5[segpath].attrs['duration_template']
+               try:
+                   sig_start = readh5[segpath].attrs['first_sample_template']
+                   sig_length = readh5[segpath].attrs['duration_template']
+               except KeyError:
+                   print("Error: segmentation information for {} not found in file".format(read))
+                   continue
+
                sig = sig[sig_start : sig_start + sig_length]
-               
-               
-               
+
             nbase = trace.shape[1] // 2
-            assert nbase * 2 == trace.shape[1]
+            assert nbase * 2 == trace.shape[1], "Trace table incorrect shape"
             assert nbase == 4 or nbase == 5, "Unsupported number of bases"
             if args.flipflops:
                 trace[:,nbase:] *= -1
