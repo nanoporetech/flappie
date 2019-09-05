@@ -3,7 +3,6 @@ import argparse
 from itertools import islice
 from multiprocessing import Pool
 import numpy as np
-import tqdm
 
 
 class Positive(object):
@@ -104,7 +103,7 @@ def read_generator(fh):
             read_data = []
         else:
             read_data.append(line)
-    yield read_name, read_lines
+    yield read_name, read_data
 
 
 gbl_args = None
@@ -138,7 +137,7 @@ if __name__ == '__main__':
 
     with open(args.file, 'r') as fh:
         with Pool(processes=args.threads, initializer=init_basecall_worker, initargs=init_params) as pool:
-            for res in tqdm.tqdm(pool.imap(basecall_worker, islice(read_generator(fh), args.limit))):
+            for res in pool.imap(basecall_worker, islice(read_generator(fh), args.limit)):
                 read_name, basecall = res
                 print('>{}'.format(read_name))
                 print('\n'.join([basecall[st : st + args.width]
