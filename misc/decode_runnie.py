@@ -50,42 +50,45 @@ def weibull_pmf(x, shape, scale):
     """ weibull pmf for x - 1 """
     a = np.power((x - 1) / scale, shape)
     b = np.power(x / scale, shape)
-    return np.exp(-a) - np.exp(-b)
+    return -np.exp(-a) * np.expm1(a - b)
 
 
 def pow1p(x, y):
     return np.exp(y * np.log1p(x))
 
 
-def run_estimate_mode(shape, scale, imax=50, threshold=0.1):
-    if shape <= 1.0:
-        return 1
+def run_estimate_modes(shape, scale, imax=50, discrete_correction=True):
+    #  Estimate run-length using mode of continuous distribution
     inv_shape = np.reciprocal(shape)
-    pdf_mode = scale * pow1p(-inv_shape, inv_shape)
+    pdf_mode = scale * np.where(shape > 1.0, pow1p(-inv_shape, inv_shape), 0.0)
     run_mode = np.int32(1 + np.floor(pdf_mode))
 
-    delta = np.round(pdf_mode) - pdf_mode
-
-    if np.abs(delta) < threshold:
-
-        prob = weibull_pmf(run_mode, shape, scale)
-
-        if prob < 0.5 and delta < 0 and run_mode > 1:
-            if weibull_pmf(run_mode - 1, shape, scale) > prob:
-                run_mode -= 1
-
-        if prob < 0.5 and delta > 0:
-            if weibull_pmf(run_mode + 1, shape, scale) > prob:
-                run_mode += 1
+    if discrete_correction:
+        #  Extend run.
+        pmf_mode = weibull_pmf(run_mode, shape, scale)
+        pmf_mode_p1 = weibull_pmf(run_mode + 1, shape, scale)
+        run_mode = np.where(pmf_mode_p1 > pmf_mode, run_mode + 1, run_mode)
+        #  Contract run, if possible.
+        pmf_mode_m1 = weibull_pmf(run_mode - 1, shape, scale)
+        run_mode = np.where((run_mode > 1) & (pmf_mode_m1 > pmf_mode),
+                            run_mode - 1,
+                            run_mode)
 
     return run_mode.astype(int)
 
 
-baseidx = {b : i for i, b in enumerate('ACGT')}
+ALPHABET = 'ACGT'
 def runlength_basecall(read_data, shapef, scalef, imax=50):
-    return ''.join([b * run_estimate_mode(float.fromhex(sh) * shapef[baseidx[b]],
-                                          float.fromhex(sc) * scalef[baseidx[b]], imax=imax)
-                    for b, sh, sc in read_data])
+    base_vec = np.array([elt[0] for elt in read_data])
+    for i, b in enumerate(ALPHABET):
+        #  Convert bases from characters to numerical index
+        base_vec[base_vec == b] = i
+    base_vec = base_vec.astype('i4')
+    shape_vec = np.array([float.fromhex(elt[1]) for elt in read_data])
+    scale_vec = np.array([float.fromhex(elt[2]) for elt in read_data])
+    runlen_est = run_estimate_modes(shape_vec * shapef[base_vec],
+                                    scale_vec * scalef[base_vec], imax=imax)
+    return ''.join([ALPHABET[b] * r for b, r in zip(base_vec, runlen_est)])
 
 
 def read_generator(fh):
@@ -107,7 +110,9 @@ gbl_args = None
 def init_basecall_worker(*args):
     global gbl_args
     if len(args) > 0:
-        gbl_args = {'shape' : args[0], 'scale' : args[1], 'run_max' : args[2]}
+        gbl_args = {'shape' : np.array(args[0]),
+                    'scale' : np.array(args[1]),
+                    'run_max' : args[2]}
 
 
 def basecall_worker(indata):
