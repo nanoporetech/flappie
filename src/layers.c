@@ -16,7 +16,6 @@
 #include "flappie_stdlib.h"
 #include "util.h"
 
-#include <stdio.h>
 
 /**  Apply tanh to a matrix element-wise
  *  @param C Matrix
@@ -1351,10 +1350,6 @@ flappie_matrix globalnorm_runlengthV2(const_flappie_matrix X, const_flappie_matr
             C->data.f[offset + r] -= logZ;
         }
     }
-
-    //   Test partition function
-    const float logZ2 = runlengthV2_partition_function(C);
-    fprintf(stderr, "Partition function %f %f\n", logZ, logZ2);
 
     return C;
 }
