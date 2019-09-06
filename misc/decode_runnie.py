@@ -60,6 +60,7 @@ def pow1p(x, y):
 def run_estimate_modes(shape, scale, imax=50, discrete_correction=True):
     #  Estimate run-length using mode of continuous distribution
     inv_shape = np.reciprocal(shape)
+
     pdf_mode = scale * np.where(shape > 1.0, pow1p(-inv_shape, inv_shape), 0.0)
     run_mode = np.int32(1 + np.floor(pdf_mode))
 
