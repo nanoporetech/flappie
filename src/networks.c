@@ -105,9 +105,10 @@ transition_function_ptr get_transition_function(const enum model_type model){
 }
 
 
-flappie_matrix calculate_transitions(const raw_table signal, float temperature, enum model_type model){
+flappie_matrix calculate_transitions(const raw_table signal, float staypen,
+                                     float temperature, enum model_type model){
     transition_function_ptr transfun = get_transition_function(model);
-    return transfun(signal, temperature);
+    return transfun(signal, staypen, temperature);
 }
 
 
@@ -337,7 +338,7 @@ guppy_model runlengthV2_r941native_guppy = {
 };
 
 
-flappie_matrix flipflop_gru_transitions(const raw_table signal, float temperature, const sloika_model * net){
+flappie_matrix flipflop_gru_transitions(const raw_table signal, float staypen,float temperature, const sloika_model * net){
     RETURN_NULL_IF(0 == signal.n, NULL);
     RETURN_NULL_IF(NULL == signal.raw, NULL);
 
@@ -377,14 +378,14 @@ flappie_matrix flipflop_gru_transitions(const raw_table signal, float temperatur
     gruF4 = free_flappie_matrix(gruF4);
     gruB5in = free_flappie_matrix(gruB5in);
 
-    flappie_matrix trans = globalnorm_flipflop(gruB5, net->FF_W, net->FF_b, temperature, NULL);
+    flappie_matrix trans = globalnorm_flipflop(gruB5, net->FF_W, net->FF_b, staypen, temperature, NULL);
     gruB5 = free_flappie_matrix(gruB5);
 
     return trans;
 }
 
 
-flappie_matrix flipflop_guppy_transitions(const raw_table signal, float temperature, const guppy_model * net){
+flappie_matrix flipflop_guppy_transitions(const raw_table signal, float staypen, float temperature, const guppy_model * net){
     RETURN_NULL_IF(0 == signal.n, NULL);
     RETURN_NULL_IF(NULL == signal.raw, NULL);
 
@@ -419,14 +420,14 @@ flappie_matrix flipflop_guppy_transitions(const raw_table signal, float temperat
     flappie_matrix gruB5 = grumod_backward(gruB5in, net->gruB5_sW, NULL);
     gruB5in = free_flappie_matrix(gruB5in);
 
-    flappie_matrix trans = globalnorm_flipflop(gruB5, net->FF_W, net->FF_b, temperature, NULL);
+    flappie_matrix trans = globalnorm_flipflop(gruB5, net->FF_W, net->FF_b, staypen, temperature, NULL);
     gruB5 = free_flappie_matrix(gruB5);
 
     return trans;
 }
 
 
-flappie_matrix flipflop_relu_transitions(const raw_table signal, float temperature, const sloika_model * net){
+flappie_matrix flipflop_relu_transitions(const raw_table signal, float staypen, float temperature, const sloika_model * net){
     RETURN_NULL_IF(0 == signal.n, NULL);
     RETURN_NULL_IF(NULL == signal.raw, NULL);
 
@@ -466,14 +467,14 @@ flappie_matrix flipflop_relu_transitions(const raw_table signal, float temperatu
     gruF4 = free_flappie_matrix(gruF4);
     gruB5in = free_flappie_matrix(gruB5in);
 
-    flappie_matrix trans = globalnorm_flipflop(gruB5, net->FF_W, net->FF_b, temperature, NULL);
+    flappie_matrix trans = globalnorm_flipflop(gruB5, net->FF_W, net->FF_b, staypen, temperature, NULL);
     gruB5 = free_flappie_matrix(gruB5);
 
     return trans;
 }
 
 
-flappie_matrix runlength_guppy_transitions(const raw_table signal, float temperature, const guppy_model * net){
+flappie_matrix runlength_guppy_transitions(const raw_table signal, float staypen, float temperature, const guppy_model * net){
     RETURN_NULL_IF(0 == signal.n, NULL);
     RETURN_NULL_IF(NULL == signal.raw, NULL);
 
@@ -508,7 +509,7 @@ flappie_matrix runlength_guppy_transitions(const raw_table signal, float tempera
     flappie_matrix gruB5 = grumod_backward(gruB5in, net->gruB5_sW, NULL);
     gruB5in = free_flappie_matrix(gruB5in);
 
-    flappie_matrix trans = globalnorm_runlength(gruB5, net->FF_W, net->FF_b, temperature, NULL);
+    flappie_matrix trans = globalnorm_runlength(gruB5, net->FF_W, net->FF_b, staypen, temperature, NULL);
 
     gruB5 = free_flappie_matrix(gruB5);
 
@@ -516,7 +517,7 @@ flappie_matrix runlength_guppy_transitions(const raw_table signal, float tempera
 }
 
 
-flappie_matrix runlengthV2_guppy_transitions(const raw_table signal, float temperature, const guppy_model * net){
+flappie_matrix runlengthV2_guppy_transitions(const raw_table signal, float staypen, float temperature, const guppy_model * net){
     RETURN_NULL_IF(0 == signal.n, NULL);
     RETURN_NULL_IF(NULL == signal.raw, NULL);
 
@@ -551,7 +552,7 @@ flappie_matrix runlengthV2_guppy_transitions(const raw_table signal, float tempe
     flappie_matrix gruB5 = grumod_backward(gruB5in, net->gruB5_sW, NULL);
     gruB5in = free_flappie_matrix(gruB5in);
 
-    flappie_matrix trans = globalnorm_runlengthV2(gruB5, net->FF_W, net->FF_b, temperature, NULL);
+    flappie_matrix trans = globalnorm_runlengthV2(gruB5, net->FF_W, net->FF_b, staypen, temperature, NULL);
 
     gruB5 = free_flappie_matrix(gruB5);
 
@@ -559,22 +560,22 @@ flappie_matrix runlengthV2_guppy_transitions(const raw_table signal, float tempe
 }
 
 
-flappie_matrix flipflop_transitions_r941native(const raw_table signal, float temperature){
-    return flipflop_guppy_transitions(signal, temperature, &flipflop_r941native_guppy);
+flappie_matrix flipflop_transitions_r941native(const raw_table signal, float staypen, float temperature){
+    return flipflop_guppy_transitions(signal, staypen, temperature, &flipflop_r941native_guppy);
 }
 
-flappie_matrix flipflop_transitions_r941native5mC(const raw_table signal, float temperature){
-    return flipflop_guppy_transitions(signal, temperature, &flipflop_r941native5mC_guppy);
+flappie_matrix flipflop_transitions_r941native5mC(const raw_table signal, float staypen, float temperature){
+    return flipflop_guppy_transitions(signal, staypen, temperature, &flipflop_r941native5mC_guppy);
 }
 
-flappie_matrix flipflop_transitions_r10Cpcr(const raw_table signal, float temperature){
-    return flipflop_guppy_transitions(signal, temperature, &flipflop_r10Cpcr_guppy);
+flappie_matrix flipflop_transitions_r10Cpcr(const raw_table signal, float staypen, float temperature){
+    return flipflop_guppy_transitions(signal, staypen, temperature, &flipflop_r10Cpcr_guppy);
 }
 
-flappie_matrix runlength_transitions_r941native(const raw_table signal, float temperature){
-    return runlength_guppy_transitions(signal, temperature, &runlength_r941native_guppy);
+flappie_matrix runlength_transitions_r941native(const raw_table signal, float staypen, float temperature){
+    return runlength_guppy_transitions(signal, staypen, temperature, &runlength_r941native_guppy);
 }
 
-flappie_matrix runlengthV2_transitions_r941native(const raw_table signal, float temperature){
-    return runlengthV2_guppy_transitions(signal, temperature, &runlengthV2_r941native_guppy);
+flappie_matrix runlengthV2_transitions_r941native(const raw_table signal, float staypen, float temperature){
+    return runlengthV2_guppy_transitions(signal, staypen,temperature, &runlengthV2_r941native_guppy);
 }

@@ -13,7 +13,7 @@
 #    include "flappie_matrix.h"
 #    include "flappie_structures.h"
 
-typedef flappie_matrix (*transition_function_ptr)(const raw_table, float);
+typedef flappie_matrix (*transition_function_ptr)(const raw_table, float, float);
 
 enum model_type {
     FLAPPIE_MODEL_R941_NATIVE = 0,
@@ -33,13 +33,13 @@ const char *flappie_model_string(const enum model_type model);
 const char *flappie_model_description(const enum model_type model);
 transition_function_ptr get_transition_function(const enum model_type model);
 
-flappie_matrix calculate_transitions(const raw_table signal, float temperature, enum model_type model);
+flappie_matrix calculate_transitions(const raw_table signal, float staypen, float temperature, enum model_type model);
 
-flappie_matrix flipflop_transitions_r941native(const raw_table signal, float temperature);
-flappie_matrix flipflop_transitions_r941native5mC(const raw_table signal, float temperature);
-flappie_matrix flipflop_transitions_r10Cpcr(const raw_table signal, float temperature);
-flappie_matrix runlength_transitions_r941native(const raw_table signal, float temperature);
-flappie_matrix runlengthV2_transitions_r941native(const raw_table signal, float temperature);
+flappie_matrix flipflop_transitions_r941native(const raw_table signal, float staypen, float temperature);
+flappie_matrix flipflop_transitions_r941native5mC(const raw_table signal, float staypen, float temperature);
+flappie_matrix flipflop_transitions_r10Cpcr(const raw_table signal, float staypen, float temperature);
+flappie_matrix runlength_transitions_r941native(const raw_table signal, float staypen, float temperature);
+flappie_matrix runlengthV2_transitions_r941native(const raw_table signal, float staypen, float temperature);
 
 
 #endif    /* NETWORKS_H */

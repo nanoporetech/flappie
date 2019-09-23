@@ -1080,11 +1080,28 @@ double crf_manystay_partition_function(const_flappie_matrix C){
 
 
 flappie_matrix globalnorm_manystay(const_flappie_matrix X, const_flappie_matrix W,
-                                    const_flappie_matrix b, float temperature, flappie_matrix C) {
+                                    const_flappie_matrix b, float staypen,
+                                    float temperature, flappie_matrix C) {
     C = affine_map(X, W, b, C);
     RETURN_NULL_IF(NULL == C, NULL);
     tanh_activation_inplace(C);
     shift_scale_matrix_inplace(C, 0.0f, temperature / 5.0f);
+
+    const size_t nbase = nbase_from_flipflop_nparam(C->nr);
+    const size_t nstate = nbase + nbase;
+    assert(nstate * (nbase + 1) == C->nr);
+    for(size_t c=0 ; c < C->nc ; c++){
+        // Subtract staypen from stay (flipX-flipX, flopX-flopX)
+        const size_t offset_flip = C->stride * c;
+        const size_t offset_flop = offset_flip + nstate * nbase;
+        for(size_t st=0 ; st < nbase ; st++){
+            // flip-flip
+            C->data.f[offset_flip + st * nstate + st] -= staypen;
+            // flop-flop
+            C->data.f[offset_flop + nbase + st] -= staypen;
+        }
+    }
+
 
     float logZ = crf_manystay_partition_function(C) / (double)C->nc;
 
@@ -1101,8 +1118,9 @@ flappie_matrix globalnorm_manystay(const_flappie_matrix X, const_flappie_matrix 
 
 
 flappie_matrix globalnorm_flipflop(const_flappie_matrix X, const_flappie_matrix W,
-                                    const_flappie_matrix b, float temperature, flappie_matrix C) {
-    return globalnorm_manystay(X, W, b, temperature, C);
+                                    const_flappie_matrix b, float staypen,
+                                    float temperature, flappie_matrix C) {
+    return globalnorm_manystay(X, W, b, staypen, temperature, C);
 }
 
 
@@ -1195,7 +1213,7 @@ double runlength_partition_function(const_flappie_matrix C){
  *   @returns Parameters for run-length encoded model
  **/
 flappie_matrix globalnorm_runlength(const_flappie_matrix X, const_flappie_matrix W,
-                                    const_flappie_matrix b, float temperature,
+                                    const_flappie_matrix b, float staypen, float temperature,
                                     flappie_matrix C){
     const float ETA = 1e-1f;
     const size_t nbase = b->nr / 4;
@@ -1325,7 +1343,7 @@ double runlengthV2_partition_function(const_flappie_matrix C){
  *   @returns Parameters for run-length encoded model
  **/
 flappie_matrix globalnorm_runlengthV2(const_flappie_matrix X, const_flappie_matrix W,
-                                      const_flappie_matrix b, float temperature,
+                                      const_flappie_matrix b, float staypen, float temperature,
                                       flappie_matrix C){
     const float ETA = 1e-1f;
     C = affine_map(X, W, b, C);

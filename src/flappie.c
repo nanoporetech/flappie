@@ -45,6 +45,7 @@ static struct argp_option options[] = {
     {"model", 'm', "name", 0, "Model to use (\"help\" to list)"},
     {"output", 'o', "filename", 0, "Write to file rather than stdout"},
     {"prefix", 'p', "string", 0, "Prefix to append to name of each read"},
+    {"staypen", 6, "penalty", 0, "Penalty for staying in same state"},
     {"temperature", 7, "factor", 0, "Temperature for weights"},
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
     {"trace", 'T', "filename", 0, "Dump trace to HDF5 file"},
@@ -72,6 +73,7 @@ struct arguments {
     enum model_type model;
     FILE * output;
     char * prefix;
+    float staypen;
     float temperature;
     int trim_start;
     int trim_end;
@@ -90,6 +92,7 @@ static struct arguments args = {
     .output = NULL,
     .outformat = FLAPPIE_OUTFORMAT_FASTQ,
     .prefix = "",
+    .staypen = 0.0f,
     .temperature = 1.0f,
     .trim_start = 200,
     .trim_end = 10,
@@ -172,6 +175,10 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
         assert(args.varseg_chunk >= 0);
         assert(args.varseg_thresh > 0.0 && args.varseg_thresh < 1.0);
         break;
+    case 6:
+	args.staypen = atof(arg);
+	assert(isfinite(args.staypen));
+        break;
     case 7:
 	args.temperature = atof(arg);
 	assert(isfinite(args.temperature) && args.temperature > 0.0f);
@@ -225,7 +232,7 @@ static struct _raw_basecall_info calculate_post(char * filename, enum model_type
 
     medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
 
-    flappie_matrix trans_weights = calculate_transitions(rt, args.temperature, model);
+    flappie_matrix trans_weights = calculate_transitions(rt, args.staypen, args.temperature, model);
     if (NULL == trans_weights) {
         free(rt.raw);
         free(rt.uuid);

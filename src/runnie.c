@@ -228,7 +228,7 @@ static void calculate_post(char * filename, enum model_type model){
 
     medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
 
-    flappie_matrix trans_weights = calculate_transitions(rt, args.temperature, model);
+    flappie_matrix trans_weights = calculate_transitions(rt, 1.0f, args.temperature, model);
     if (NULL == trans_weights) {
         free_raw_table(&rt);
         return;
