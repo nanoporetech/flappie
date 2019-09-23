@@ -1039,6 +1039,10 @@ double crf_manystay_partition_function(const_flappie_matrix C){
 
     double * curr = mem;
     double * prev = mem + nstate;
+    for(size_t st=nbase ; st < nstate ; st++){
+	    // Don't start in stay / flop
+	    curr[st] = -1e30;
+    }
 
     for(size_t c=0 ; c < C->nc ; c++){
         const size_t offset = c * C->stride;

@@ -137,6 +137,11 @@ float decode_crf_flipflop(const_flappie_matrix trans, bool combine_stays, int * 
 
     float * curr = mem;
     float * prev = mem + nstate;
+    //  Initialise prior
+    for(size_t b=nbase ; b < nstate ; b++){
+	    //  Never start in flop state
+	    curr[b] = -1e30;
+    }
 
 
     //  Forwards Viterbi pass
@@ -225,6 +230,11 @@ float constrained_crf_flipflop(const_flappie_matrix post, int * path){
 
     float * curr = mem;
     float * prev = mem + nstate;
+    //  Initialise prior
+    for(size_t b=nbase ; b < nstate ; b++){
+	    //  Never start in flop state
+	    curr[b] = -1e30;
+    }
 
 
     //  Forwards Viterbi pass
@@ -283,6 +293,11 @@ flappie_matrix posterior_crf_flipflop(const_flappie_matrix trans, bool return_lo
 
     flappie_matrix fwd = make_flappie_matrix(nstate, nblk + 1);
     RETURN_NULL_IF(NULL == fwd, NULL);
+    //  Initialise prior
+    for(size_t b=nbase ; b < nstate ; b++){
+	    //  Never start in flop state
+	    fwd->data.f[b] = -1e30;
+    }
 
 
     //  Forwards pass
@@ -389,6 +404,11 @@ flappie_matrix transpost_crf_flipflop(const_flappie_matrix trans, bool return_lo
         fwd = free_flappie_matrix(fwd);
         tpost = free_flappie_matrix(tpost);
         return NULL;
+    }
+    //  Initialise prior
+    for(size_t b=nbase ; b < nstate ; b++){
+	    //  Never start in flop state
+	    fwd->data.f[b] = -1e30;
     }
 
 
