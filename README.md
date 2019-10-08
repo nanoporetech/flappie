@@ -208,7 +208,7 @@ involved.
 
 
 ###  Platform support
-The models contained contained in Flappie are trained using data from
+The models contained in Flappie are trained using data from
 the MinION platform.  Use on other platforms is not supported, although
 they may generalise to reads from the GridION platform due to the
 similarity of the hardware.
