@@ -426,11 +426,13 @@ void difference_array(float *x, size_t n);
 void filter_array(float *x, size_t n, float fill_val, float thresh);
 void clip_array(float *x, size_t n, float thresh);
 void qscore_array(float *x, size_t n);
+void flip_array(float *x , size_t n);
 
 bool equality_array(double const * x, double const * y, size_t n, double const tol);
 bool equality_arrayf(float const * x, float const * y, size_t n, float const tol);
 bool equality_arrayi(int const * x, int const * y, size_t n);
 size_t ndiff_array(const int * x, size_t n);
+
 bool mod_array_inplace(int * x, size_t n, int m);
 
 char * phredstr_from_qscore(float * x, size_t n);

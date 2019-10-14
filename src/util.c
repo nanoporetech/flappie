@@ -1,7 +1,7 @@
 /*  Copyright 2018 Oxford Nanopore Technologies, Ltd */
 
 /*  This Source Code Form is subject to the terms of the Oxford Nanopore
- *  Technologies, Ltd. Public License, v. 1.0. If a copy of the License 
+ *  Technologies, Ltd. Public License, v. 1.0. If a copy of the License
  *  was not  distributed with this file, You can obtain one at
  *  http://nanoporetech.com
  */
@@ -380,6 +380,16 @@ size_t ndiff_array(const int * x, size_t n){
 
     return ndiff;
 }
+
+void flip_array(float *x , size_t n){
+    for(size_t i=0 ; i < (n / 2) ; i++){
+        size_t ri = n - i - 1;
+        float tmp = x[ri];
+        x[ri] = x[i];
+        x[i] = tmp;
+    }
+}
+
 
 bool mod_array_inplace(int * x, size_t n, int m){
     RETURN_NULL_IF(NULL == x, false);
