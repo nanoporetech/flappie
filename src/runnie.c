@@ -253,7 +253,7 @@ static void calculate_post(char * filename, enum model_type model){
         const int base = path[blk];
 	const float shape = trans_weights->data.f[offset + base];
 	const float scale = trans_weights->data.f[offset + nbase + base];
-        fprintf(args.output, "%c\t%a\t%a\n",
+        fprintf(args.output, "%c\t%f\t%f\n",
                 basechar(base), shape, scale);
         //fprintf(args.output, "%c\t%f\t%f\t%f\n",
         //        basechar(base), shape, scale, 1.0 + scale * expf(log1pf( - 1.0 / shape) / shape));

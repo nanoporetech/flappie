@@ -14,7 +14,6 @@ import sys
 
 from taiyaki import helpers
 from taiyaki.cmdargs import AutoBool, FileExists
-from taiyaki.layers import _cudnn_to_guppy_gru
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--id', default='' , help='Identifier for model names')
@@ -66,9 +65,9 @@ def cformatV(fh, name, X):
 
 
 def print_gru(gru, name):
-    iW = _cudnn_to_guppy_gru(gru.cudnn_gru.weight_ih_l0)
-    sW = _cudnn_to_guppy_gru(gru.cudnn_gru.weight_hh_l0)
-    b = _cudnn_to_guppy_gru(gru.cudnn_gru.bias_ih_l0)
+    iW = gru.lstm.weight_ih_l0
+    sW = gru.lstm.weight_hh_l0
+    b = gru.lstm.bias_ih_l0
     cformatM(sys.stdout, '{}iW'.format(name), iW)
     cformatM(sys.stdout, '{}sW'.format(name), sW)
     cformatV(sys.stdout, '{}b'.format(name), b.reshape(-1))
