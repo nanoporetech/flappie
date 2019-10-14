@@ -59,21 +59,8 @@ def pow1p(x, y):
 
 def run_estimate_modes(shape, scale, imax=50, discrete_correction=True):
     #  Estimate run-length using mode of continuous distribution
-    inv_shape = np.reciprocal(shape)
-
-    pdf_mode = scale * np.where(shape > 1.0, pow1p(-inv_shape, inv_shape), 0.0)
-    run_mode = np.int32(1 + np.floor(pdf_mode))
-
-    if discrete_correction:
-        #  Extend run.
-        pmf_mode = weibull_pmf(run_mode, shape, scale)
-        pmf_mode_p1 = weibull_pmf(run_mode + 1, shape, scale)
-        run_mode = np.where(pmf_mode_p1 > pmf_mode, run_mode + 1, run_mode)
-        #  Contract run, if possible.
-        pmf_mode_m1 = weibull_pmf(run_mode - 1, shape, scale)
-        run_mode = np.where((run_mode > 1) & (pmf_mode_m1 > pmf_mode),
-                            run_mode - 1,
-                            run_mode)
+    #run_mode = np.floor(scale + 1)
+    run_mode = np.maximum(1, np.floor(scale))
 
     return run_mode.astype(int)
 
@@ -85,8 +72,8 @@ def runlength_basecall(read_data, shapef, scalef, imax=50):
         #  Convert bases from characters to numerical index
         base_vec[base_vec == b] = i
     base_vec = base_vec.astype('i4')
-    shape_vec = np.array([float.fromhex(elt[1]) for elt in read_data])
-    scale_vec = np.array([float.fromhex(elt[2]) for elt in read_data])
+    shape_vec = np.array([float(elt[1]) for elt in read_data])
+    scale_vec = np.array([float(elt[2]) for elt in read_data])
     runlen_est = run_estimate_modes(shape_vec * shapef[base_vec],
                                     scale_vec * scalef[base_vec], imax=imax)
     return ''.join([ALPHABET[b] * r for b, r in zip(base_vec, runlen_est)])

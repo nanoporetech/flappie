@@ -73,12 +73,11 @@ void gru_relu_step(const_flappie_matrix x, const_flappie_matrix istate,
                    flappie_matrix xF, flappie_matrix ostate);
 
 flappie_matrix lstm_forward(const_flappie_matrix X, const_flappie_matrix sW,
-                            const_flappie_matrix p, flappie_matrix output);
+                            flappie_matrix output);
 flappie_matrix lstm_backward(const_flappie_matrix X, const_flappie_matrix sW,
-                             const_flappie_matrix p, flappie_matrix output);
+                             flappie_matrix output);
 void lstm_step(const_flappie_matrix x, const_flappie_matrix out_prev,
-               const_flappie_matrix sW,
-               const_flappie_matrix peep, flappie_matrix xF,
+               const_flappie_matrix sW, flappie_matrix xF,
                flappie_matrix state, flappie_matrix output);
 
 

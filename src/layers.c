@@ -859,16 +859,14 @@ void gru_relu_step(const_flappie_matrix x, const_flappie_matrix istate,
 
 
 flappie_matrix lstm_forward(const_flappie_matrix Xaffine,
-                             const_flappie_matrix sW, const_flappie_matrix p,
+                             const_flappie_matrix sW,
                              flappie_matrix output) {
     RETURN_NULL_IF(NULL == Xaffine, NULL);
     assert(NULL != sW);
-    assert(NULL != p);
 
     const size_t size = sW->nr;
     const size_t bsize = Xaffine->nc;
     assert(Xaffine->nr == 4 * size);
-    assert(p->nr == 3 * size);
     assert(sW->nc == 4 * size);
 
     output = remake_flappie_matrix(output, size, bsize);
@@ -893,12 +891,12 @@ flappie_matrix lstm_forward(const_flappie_matrix Xaffine,
     xCol.nc = sCol1.nc = sCol2.nc = 1;
     sCol1.data.v = output->data.v + output->nrq;
     sCol2.data.v = output->data.v;
-    lstm_step(&xCol, &sCol1, sW, p, tmp, state, &sCol2);
+    lstm_step(&xCol, &sCol1, sW, tmp, state, &sCol2);
     for (size_t i = 1; i < bsize; i++) {
         xCol.data.v = Xaffine->data.v + i * Xaffine->nrq;
         sCol1.data.v = output->data.v + (i - 1) * output->nrq;
         sCol2.data.v = output->data.v + i * output->nrq;
-        lstm_step(&xCol, &sCol1, sW, p, tmp, state, &sCol2);
+        lstm_step(&xCol, &sCol1, sW, tmp, state, &sCol2);
     }
 
     state = free_flappie_matrix(state);
@@ -911,17 +909,15 @@ flappie_matrix lstm_forward(const_flappie_matrix Xaffine,
 
 
 flappie_matrix lstm_backward(const_flappie_matrix Xaffine,
-                              const_flappie_matrix sW, const_flappie_matrix p,
+                              const_flappie_matrix sW,
                               flappie_matrix output) {
     RETURN_NULL_IF(NULL == Xaffine, NULL);
     assert(NULL != sW);
-    assert(NULL != p);
 
     const size_t size = sW->nr;
     const size_t bsize = Xaffine->nc;
     assert(Xaffine->nr == 4 * size);
     assert(sW->nc == 4 * size);
-    assert(p->nr == 3 * size);
 
     output = remake_flappie_matrix(output, size, bsize);
     RETURN_NULL_IF(NULL == output, NULL);
@@ -946,13 +942,13 @@ flappie_matrix lstm_backward(const_flappie_matrix Xaffine,
     xCol.data.v = Xaffine->data.v + (bsize - 1) * Xaffine->nrq;
     sCol1.data.v = output->data.v;
     sCol2.data.v = output->data.v + (bsize - 1) * output->nrq;
-    lstm_step(&xCol, &sCol1, sW, p, tmp, state, &sCol2);
+    lstm_step(&xCol, &sCol1, sW, tmp, state, &sCol2);
     for (size_t i = 1; i < bsize; i++) {
         const size_t index = bsize - i - 1;
         xCol.data.v = Xaffine->data.v + index * Xaffine->nrq;
         sCol1.data.v = output->data.v + (index + 1) * output->nrq;
         sCol2.data.v = output->data.v + index * output->nrq;
-        lstm_step(&xCol, &sCol1, sW, p, tmp, state, &sCol2);
+        lstm_step(&xCol, &sCol1, sW, tmp, state, &sCol2);
     }
 
     state = free_flappie_matrix(state);
@@ -965,7 +961,7 @@ flappie_matrix lstm_backward(const_flappie_matrix Xaffine,
 
 
 void lstm_step(const_flappie_matrix xAffine, const_flappie_matrix out_prev,
-               const_flappie_matrix sW, const_flappie_matrix peep,
+               const_flappie_matrix sW,
                flappie_matrix xF, flappie_matrix state,
                flappie_matrix output) {
     /* Perform a single LSTM step
@@ -980,7 +976,6 @@ void lstm_step(const_flappie_matrix xAffine, const_flappie_matrix out_prev,
     assert(NULL != xAffine);
     assert(NULL != out_prev);
     assert(NULL != sW);
-    assert(NULL != peep);
     assert(NULL != xF);
     assert(NULL != state);
     assert(NULL != output);
@@ -989,7 +984,6 @@ void lstm_step(const_flappie_matrix xAffine, const_flappie_matrix out_prev,
     assert(size == out_prev->nr);
     assert(size == sW->nr);
     assert(4 * size == sW->nc);
-    assert(3 * size == peep->nr);
     assert(4 * size == xF->nr);
     assert(size == output->nr);
 
@@ -1003,21 +997,15 @@ void lstm_step(const_flappie_matrix xAffine, const_flappie_matrix out_prev,
     const size_t sizeq = size / 4;
     for (size_t i = 0; i < sizeq; i++) {
         // Forget gate
-        __m128 forget = LOGISTICFV(xF->data.v[2 * sizeq + i]
-                                   + state->data.v[i] * peep->data.v[sizeq + i])
-            * state->data.v[i];
+        __m128 forget = LOGISTICFV(xF->data.v[sizeq + i])
+                      * state->data.v[i];
         // Update gate
-        __m128 update = LOGISTICFV(xF->data.v[sizeq + i]
-                                   + state->data.v[i] * peep->data.v[i])
-            * TANHFV(xF->data.v[i]);
+        __m128 update = LOGISTICFV(xF->data.v[i])
+                      * TANHFV(xF->data.v[2 * sizeq + i]);
         state->data.v[i] = _mm_add_ps(forget, update);
         // Output gate
-        output->data.v[i] = LOGISTICFV(xF->data.v[3 * sizeq + i]
-                                       +
-                                       state->data.v[i] * peep->data.v[2 *
-                                                                       sizeq +
-                                                                       i])
-            * TANHFV(state->data.v[i]);
+        output->data.v[i] = LOGISTICFV(xF->data.v[3 * sizeq + i])
+                          * TANHFV(state->data.v[i]);
     }
 }
 
@@ -1323,7 +1311,6 @@ double runlengthV2_partition_function(const_flappie_matrix C){
 flappie_matrix globalnorm_runlengthV2(const_flappie_matrix X, const_flappie_matrix W,
                                       const_flappie_matrix b, float temperature,
                                       flappie_matrix C){
-    const float ETA = 1e-1f;
     C = affine_map(X, W, b, C);
     RETURN_NULL_IF(NULL == C, NULL);
     const size_t nbase = nbase_from_crf_runlength_nparam(C->nr);
@@ -1333,8 +1320,8 @@ flappie_matrix globalnorm_runlengthV2(const_flappie_matrix X, const_flappie_matr
         const size_t offset = c * C->stride;
         for(size_t b=0 ; b < nbase ; b++){
             //  Shift and scale parameters
-            C->data.f[offset + b] = 0.25f + softplusf(C->data.f[offset + b]);
-            C->data.f[offset + nbase + b] = ETA + softplusf(C->data.f[offset + nbase + b]);
+            C->data.f[offset + b] = 0.1f + softplusf(C->data.f[offset + b]);
+            C->data.f[offset + nbase + b] = 1e-8f + softplusf(C->data.f[offset + nbase + b]);
         }
         for(size_t param=nrunparam ; param < C->nr ; param++){
             //  Transition parameters
