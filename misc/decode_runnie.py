@@ -2,6 +2,8 @@
 import argparse
 from itertools import islice
 from multiprocessing import Pool
+import warnings
+
 import numpy as np
 
 
@@ -48,13 +50,19 @@ parser.add_argument('file', default='/dev/stdin', nargs='?')
 
 def weibull_pmf(x, shape, scale):
     """ weibull pmf for x - 1 """
-    a = np.power((x - 1) / scale, shape)
-    b = np.power(x / scale, shape)
-    return -np.exp(-a) * np.expm1(a - b)
+    with warnings.catch_warnings():
+        warnings.simplefilter(action='ignore', category=RuntimeWarning)
+        a = np.power((x - 1) / scale, shape)
+        b = np.power(x / scale, shape)
+        pmf = -np.exp(-a) * np.expm1(a - b)
+    return pmf
 
 
 def pow1p(x, y):
-    return np.exp(y * np.log1p(x))
+    with warnings.catch_warnings():
+        warnings.simplefilter(action='ignore', category=RuntimeWarning)
+        res = np.exp(y * np.log1p(x))
+    return res
 
 
 def run_estimate_modes(shape, scale, imax=50, discrete_correction=True):
@@ -70,10 +78,12 @@ def run_estimate_modes(shape, scale, imax=50, discrete_correction=True):
         pmf_mode_p1 = weibull_pmf(run_mode + 1, shape, scale)
         run_mode = np.where(pmf_mode_p1 > pmf_mode, run_mode + 1, run_mode)
         #  Contract run, if possible.
-        pmf_mode_m1 = weibull_pmf(run_mode - 1, shape, scale)
-        run_mode = np.where((run_mode > 1) & (pmf_mode_m1 > pmf_mode),
-                            run_mode - 1,
-                            run_mode)
+        with warnings.catch_warnings():
+            warnings.simplefilter(action='ignore', category=RuntimeWarning)
+            pmf_mode_m1 = weibull_pmf(run_mode - 1, shape, scale)
+            run_mode = np.where((run_mode > 1) & (pmf_mode_m1 > pmf_mode),
+                                run_mode - 1,
+                                run_mode)
 
     return run_mode.astype(int)
 
