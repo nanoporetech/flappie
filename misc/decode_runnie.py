@@ -2,6 +2,7 @@
 import argparse
 from itertools import islice
 from multiprocessing import Pool
+import sys
 import warnings
 
 import numpy as np
@@ -90,10 +91,15 @@ def run_estimate_modes(shape, scale, imax=50, discrete_correction=True):
 
 ALPHABET = 'ACGT'
 def runlength_basecall(read_data, shapef, scalef, imax=50):
+    if len(read_data) == 0:
+        #  No data, no base call
+        return None
+
     base_vec = np.array([elt[0] for elt in read_data])
     for i, b in enumerate(ALPHABET):
         #  Convert bases from characters to numerical index
         base_vec[base_vec == b] = i
+
     base_vec = base_vec.astype('i4')
     shape_vec = np.array([float.fromhex(elt[1]) for elt in read_data])
     scale_vec = np.array([float.fromhex(elt[2]) for elt in read_data])
@@ -129,6 +135,7 @@ def init_basecall_worker(*args):
 def basecall_worker(indata):
     read_name, read_lines = indata
     read_data = [line.split('\t') for line in read_lines]
+
     if gbl_args is None:
         basecall = ''.join([elt[0] for elt in read_data])
     else:
@@ -150,6 +157,9 @@ if __name__ == '__main__':
         with Pool(processes=args.threads, initializer=init_basecall_worker, initargs=init_params) as pool:
             for res in pool.imap(basecall_worker, islice(read_generator(fh), args.limit)):
                 read_name, basecall = res
+                if basecall is None:
+                    sys.stderr.write('No basecall returned for {}\n'.format(read_name))
+                    continue
                 print('>{}'.format(read_name))
                 print('\n'.join([basecall[st : st + args.width]
                                  for st in range(0, len(basecall), args.width)]))
