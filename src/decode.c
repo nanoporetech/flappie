@@ -1126,6 +1126,12 @@ flappie_matrix transpost_crf_runlength(const_flappie_matrix param){
             post->data.f[offset + idx] = fwd->data.f[foffset + b + nbase] + param->data.f[offset + idx] + prev[b + nbase];
         }
 
+    const size_t offset2 = (blk - 1) * param->stride;
+    for(size_t p=0 ; p < (nbase + nbase) ; p++){
+        //  Copy over shape ana scale parameters
+        post->data.f[offset2 + p] = param->data.f[offset2 + p];
+    }
+
 	/*
         float score = curr[0] + fwd->data.f[foffset + 0];
         for(size_t i=1 ; i < nstate ; i++){

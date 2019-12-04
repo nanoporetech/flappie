@@ -97,35 +97,8 @@ commercial products.
   
 Each entry starts with a comment containing the read ID, followed by one line
 for each base in the run-length compressed basecall.  These lines contain the
-base called and the _shape_ and _scale_ of the run-length distribution,
-tab-separated.
-
-To avoid loss of precision in the output, the _shape_ and _scale_ are presented
-as hex-encoded floats.  These are generally supported and easy to work with in
-most languages (e.g. Python `float.fromhex(val)`.
-
-
-E.g.
-
-    # de1508c4-755b-489e-9ffb-51af35c9a7e6
-    T       0x1.ec61fep+0   0x1.19ef36p+0
-    G       0x1.9c5bdcp+0   0x1.d3101cp-2
-    A       0x1.833a68p+1   0x1.a9fcaap+0
-    C       0x1.2fb83ep-1   0x1.5dc86p-2
-    A       0x1.f9fee8p-2   0x1.a7fca6p-2
-    T       0x1.b6da98p-1   0x1.1b50ccp-2
-    ...
-    C       0x1.435c7ep+0   0x1.9cdb38p-4
-    T       0x1.17cc24p+0   0x1.a0cabp-4
-    G       0x1.ed52bap+3   0x1.b9cb64p+0
-    T       0x1.bcef2p+2    0x1.6ede9ap+0
-    # 0f776a08-1101-41d4-8097-89136494a46e
-    T       0x1.265794p+2   0x1.0a968p+1
-    A       0x1.087ff4p-1   0x1.9f588cp-3
-    T       0x1.0251dp+1    0x1.04a72ap+1
-    G       0x1.498e1ap-1   0x1.a9aef4p-1
-    A       0x1.2328c8p+0   0x1.8f612ap-1
-
+following values, tab-separated: base called, the _shape_ and _scale_ of the
+run-length distribution, and the number of blocks in that run.
 
 ##  Limitations
 Being a initial research release, `Runnie` several limitations and is only

@@ -12,6 +12,7 @@ import math
 import re
 import sys
 
+import taiyaki
 from taiyaki import helpers
 from taiyaki.cmdargs import AutoBool, FileExists
 
@@ -64,7 +65,7 @@ def cformatV(fh, name, X):
     fh.write('const flappie_matrix {} = &{};\n\n'.format(name, '_' + name))
 
 
-def print_gru(gru, name):
+def print_lstm(gru, name):
     iW = gru.lstm.weight_ih_l0
     sW = gru.lstm.weight_hh_l0
     b = gru.lstm.bias_ih_l0
@@ -78,6 +79,10 @@ if __name__ == '__main__':
     modelid = args.id + '_'
 
     network = helpers.load_model(args.model)
+    #  Remove first layer (DeltaSample)
+    if type(network.sublayers[0]) == taiyaki.layers.DeltaSample:
+        sys.stderr.write('First layer is DeltaSample, removing\n')
+        network.sublayers = network.sublayers[1:]
 
     sys.stdout.write("""#pragma once
     #ifndef RLE_{}MODEL_H
@@ -103,27 +108,27 @@ if __name__ == '__main__':
     """  Backward GRU (first layer)
     """
     gru1 = network.sublayers[1].layer
-    print_gru(gru1, 'gruB1_rnnrf_rle_{}'.format(modelid))
+    print_lstm(gru1, 'gruB1_rnnrf_rle_{}'.format(modelid))
 
     """  Forward GRU (second layer)
     """
     gru2 = network.sublayers[2]
-    print_gru(gru2, 'gruF2_rnnrf_rle_{}'.format(modelid))
+    print_lstm(gru2, 'gruF2_rnnrf_rle_{}'.format(modelid))
 
     """ backward GRU(third layer)
     """
     gru3 = network.sublayers[3].layer
-    print_gru(gru3, 'gruB3_rnnrf_rle_{}'.format(modelid))
+    print_lstm(gru3, 'gruB3_rnnrf_rle_{}'.format(modelid))
 
     """  Forward GRU (fourth layer)
     """
     gru4 = network.sublayers[4]
-    print_gru(gru4, 'gruF4_rnnrf_rle_{}'.format(modelid))
+    print_lstm(gru4, 'gruF4_rnnrf_rle_{}'.format(modelid))
 
     """ backward GRU(fifth layer)
     """
     gru5 = network.sublayers[5].layer
-    print_gru(gru5, 'gruB5_rnnrf_rle_{}'.format(modelid))
+    print_lstm(gru5, 'gruB5_rnnrf_rle_{}'.format(modelid))
     """ Global norm layer
     """
     gnlayer = network.sublayers[6]

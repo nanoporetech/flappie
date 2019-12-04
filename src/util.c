@@ -211,6 +211,17 @@ void medmad_normalise_array(float *x, size_t n) {
     }
 }
 
+
+void shift_scale_array(float * x, size_t n, float shift, float scale){
+    if (NULL == x) {
+        return;
+    }
+
+    for(size_t i=0 ; i < n ; i++){
+        x[i] = (x[i] - shift) / scale;
+    }
+}
+
 /** Studentise array using Kahan summation algorithm
  *
  *  Studentise an array using the Kahan summation
@@ -380,16 +391,6 @@ size_t ndiff_array(const int * x, size_t n){
 
     return ndiff;
 }
-
-void flip_array(float *x , size_t n){
-    for(size_t i=0 ; i < (n / 2) ; i++){
-        size_t ri = n - i - 1;
-        float tmp = x[ri];
-        x[ri] = x[i];
-        x[i] = tmp;
-    }
-}
-
 
 bool mod_array_inplace(int * x, size_t n, int m){
     RETURN_NULL_IF(NULL == x, false);

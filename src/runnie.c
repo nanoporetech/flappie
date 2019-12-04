@@ -41,14 +41,16 @@ static char doc[] = "Runnie basecaller -- basecall from raw signal";
 static char args_doc[] = "fast5 [fast5 ...]";
 static struct argp_option options[] = {
     //{"format", 'f', "format", 0, "Format to output reads (FASTA or SAM)"},
+    {"delta", 'd', "factor", 0, "Using delta samples model with scaling factor"},
     {"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)"},
     //{"model", 'm', "name", 0, "Model to use (\"help\" to list)"},
     {"output", 'o', "filename", 0, "Write to file rather than stdout"},
     {"prefix", 'p', "string", 0, "Prefix to append to name of each read"},
-    {"reverse", 'r', 0, 0, "Reverse input signal"},
-    {"reverse", 4, 0, OPTION_ALIAS, "Do not reverse input signal"},
     {"temperature", 7, "factor", 0, "Temperature for weights"},
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
+    {"viterbi", 'v', 0, 0, "Use viterbi decoding only"},
+    {"no-viterbi", 8, 0, OPTION_ALIAS, "Use forward-backward followed by viterbi"},
+    {"fb", 9, 0, OPTION_ALIAS, "Use forward-backward followed by viterbi"},
     //{"trace", 'T', "filename", 0, "Dump trace to HDF5 file"},
     {"licence", 10, 0, 0, "Print licensing information"},
     {"license", 11, 0, OPTION_ALIAS, "Print licensing information"},
@@ -68,18 +70,19 @@ static struct argp_option options[] = {
 struct arguments {
     int compression_level;
     int compression_chunk_size;
+    float delta;
     char * trace;
     enum flappie_outformat_type outformat;
     int limit;
     enum model_type model;
     FILE * output;
     char * prefix;
-    bool reverse;
     float temperature;
     int trim_start;
     int trim_end;
     int varseg_chunk;
     float varseg_thresh;
+    bool viterbi_only;
     char ** files;
     bool uuid;
 };
@@ -87,18 +90,19 @@ struct arguments {
 static struct arguments args = {
     .compression_level = 1,
     .compression_chunk_size = 200,
+    .delta = 1.0f,
     .trace = NULL,
     .limit = 0,
     .model = DEFAULT_MODEL,
     .output = NULL,
     .outformat = FLAPPIE_OUTFORMAT_FASTA,
     .prefix = "",
-    .reverse = false,
     .temperature = 1.0f,
     .trim_start = 200,
     .trim_end = 10,
     .varseg_chunk = 100,
     .varseg_thresh = 0.0f,
+    .viterbi_only = false,
     .files = NULL,
     .uuid = true
 };
@@ -127,6 +131,10 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
             errx(EXIT_FAILURE, "Unrecognised output format \"%s\".", arg);
         }
         break;*/
+    case 'd':
+        args.delta = atof(arg);
+        assert(args.delta > 0.0f);
+        break;
     case 'l':
         args.limit = atoi(arg);
         assert(args.limit > 0);
@@ -153,9 +161,6 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
     case 'p':
         args.prefix = arg;
         break;
-    case 'r':
-        args.reverse = true;
-        break;
     case 't':
         args.trim_start = atoi(strtok(arg, ":"));
         next_tok = strtok(NULL, ":");
@@ -166,6 +171,9 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
         }
         assert(args.trim_start >= 0);
         assert(args.trim_end >= 0);
+        break;
+    case 'v':
+        args.viterbi_only = true;
         break;
     /*
     case 'T':
@@ -181,12 +189,15 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
         assert(args.varseg_chunk >= 0);
         assert(args.varseg_thresh > 0.0 && args.varseg_thresh < 1.0);
         break;
-    case 4:
-        args.reverse = false;
-        break;
     case 7:
 	args.temperature = atof(arg);
 	assert(isfinite(args.temperature) && args.temperature > 0.0f);
+        break;
+    case 8:
+        args.viterbi_only = false;
+        break;
+    case 9:
+        args.viterbi_only = false;
         break;
     case 10:
     case 11:
@@ -236,9 +247,11 @@ static void calculate_post(char * filename, enum model_type model){
     rt = trim_and_segment_raw(rt, args.trim_start, args.trim_end, args.varseg_chunk, args.varseg_thresh);
     RETURN_NULL_IF(NULL == rt.raw, );
 
-    medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
-    if(args.reverse){
-        flip_array(rt.raw + rt.start, rt.end - rt.start);
+    if( args.delta == 0.0f){
+        medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
+    } else {
+        difference_array(rt.raw + rt.start, rt.end - rt.start);
+        shift_scale_array(rt.raw + rt.start, rt.end - rt.start, 0.0, args.delta);
     }
 
     flappie_matrix trans_weights = calculate_transitions(rt, args.temperature, model);
@@ -254,27 +267,51 @@ static void calculate_post(char * filename, enum model_type model){
 
     float score = NAN;
 
-    flappie_matrix transpost = transpost_crf_runlength(trans_weights);
+
+    flappie_matrix transpost = trans_weights;
+    if(!args.viterbi_only){
+        transpost = transpost_crf_runlength(trans_weights);
+        free(trans_weights);
+    }
     score = decode_crf_runlength(transpost, path);
     fprintf(args.output, "# %s\n", rt.uuid);
-    for(size_t blk=0 ; blk < nblock ; blk++){
-        if(path[blk] >= nbase){
-            // Short circuit non-base
-            continue;
+
+    {
+        int dwell = 1;
+        int last_blk = -1;
+        for(size_t blk=0 ; blk < nblock ; blk++){
+            if(path[blk] >= nbase){
+                // No new base emitted, short circuit
+                dwell += 1;
+                continue;
+            }
+
+            //  New base
+            if(last_blk >= 0){
+                // If a base has already been called, emit run
+                const size_t offset = last_blk * transpost->stride;
+                const int base = path[last_blk];
+                const float shape = transpost->data.f[offset + base];
+                const float scale = transpost->data.f[offset + nbase + base];
+                fprintf(args.output, "%c\t%f\t%f\t%d\n",
+                        basechar(base), shape, scale, dwell);
+            }
+            last_blk = blk;
+            dwell = 1;
         }
-        const size_t offset = blk * trans_weights->stride;
-        const int base = path[blk];
-	const float shape = trans_weights->data.f[offset + base];
-	const float scale = trans_weights->data.f[offset + nbase + base];
-        fprintf(args.output, "%c\t%f\t%f\n",
-                basechar(base), shape, scale);
-        //fprintf(args.output, "%c\t%f\t%f\t%f\n",
-        //        basechar(base), shape, scale, 1.0 + scale * expf(log1pf( - 1.0 / shape) / shape));
+        if(last_blk >= 0){
+            // Emit final base and run, if any
+            const size_t offset = last_blk * transpost->stride;
+            const int base = path[last_blk];
+            const float shape = transpost->data.f[offset + base];
+            const float scale = transpost->data.f[offset + nbase + base];
+            fprintf(args.output, "%c\t%f\t%f\t%d\n",
+                    basechar(base), shape, scale, dwell);
+        }
     }
 
     transpost = free_flappie_matrix(transpost);
     free(path);
-    trans_weights = free_flappie_matrix(trans_weights);
     free_raw_table(&rt);
 }
 

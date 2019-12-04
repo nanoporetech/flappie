@@ -1320,7 +1320,7 @@ flappie_matrix globalnorm_runlengthV2(const_flappie_matrix X, const_flappie_matr
         const size_t offset = c * C->stride;
         for(size_t b=0 ; b < nbase ; b++){
             //  Shift and scale parameters
-            C->data.f[offset + b] = 0.1f + softplusf(C->data.f[offset + b]);
+            C->data.f[offset + b] = 1.0f + softplusf(C->data.f[offset + b]);
             C->data.f[offset + nbase + b] = 1e-8f + softplusf(C->data.f[offset + nbase + b]);
         }
         for(size_t param=nrunparam ; param < C->nr ; param++){

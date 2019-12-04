@@ -36,7 +36,7 @@ parser.add_argument('--no-rlc', dest='rlc', action='store_false',
                     help="Don't call run-length compressed sequence")
 parser.add_argument('--run_max', default=50, type=Positive(int),
                     help='Maximum run for mean approximation')
-parser.add_argument('--scale', default=(1.00, 1.00, 1.00, 1.00), nargs=4,
+parser.add_argument('--scale', default=(1.03, 1.05, 1.06, 1.04), nargs=4,
                     metavar=('scaleA', 'scaleC', 'scaleG', 'scaleT'), type=Positive(float),
                     help='Factors for per-base scale parameter')
 parser.add_argument('--shape', default=(1.00, 1.00, 1.00, 1.00), nargs=4,
