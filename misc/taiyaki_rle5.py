@@ -109,52 +109,52 @@ if __name__ == '__main__':
     network = helpers.load_model(args.model)
 
     sys.stdout.write("""#pragma once
-    #ifndef FLIPFLOP_{}MODEL_H
-    #define FLIPFLOP_{}MODEL_H
+    #ifndef RLE_{}MODEL_H
+    #define RLE_{}MODEL_H
     #include "../util.h"
     """.format(modelid.upper(), modelid.upper()))
 
     """ Convolution layers
     """
     conv1 = network.sublayers[0]
-    print_convolution(conv1, 'conv1_rnnrf_flipflop5_{}'.format(modelid),
+    print_convolution(conv1, 'conv1_rnnrf_rle5_{}'.format(modelid),
                       scale=args.scale)
     conv2 = network.sublayers[1]
-    print_convolution(conv2, 'conv2_rnnrf_flipflop5_{}'.format(modelid),
+    print_convolution(conv2, 'conv2_rnnrf_rle5_{}'.format(modelid),
                       scale=args.scale)
     conv3 = network.sublayers[2]
-    print_convolution(conv3, 'conv3_rnnrf_flipflop5_{}'.format(modelid),
+    print_convolution(conv3, 'conv3_rnnrf_rle5_{}'.format(modelid),
                       scale=args.scale)
 
     """  Backward LSTM (first layer)
     """
     lstm1 = network.sublayers[3].layer
-    print_lstm(lstm1, 'lstmB1_rnnrf_flipflop5_{}'.format(modelid))
+    print_lstm(lstm1, 'lstmB1_rnnrf_rle5_{}'.format(modelid))
 
     """  Forward LSTM (second layer)
     """
     lstm2 = network.sublayers[4]
-    print_lstm(lstm2, 'lstmF2_rnnrf_flipflop5_{}'.format(modelid))
+    print_lstm(lstm2, 'lstmF2_rnnrf_rle5_{}'.format(modelid))
 
     """ backward LSTM(third layer)
     """
     lstm3 = network.sublayers[5].layer
-    print_lstm(lstm3, 'lstmB3_rnnrf_flipflop5_{}'.format(modelid))
+    print_lstm(lstm3, 'lstmB3_rnnrf_rle5_{}'.format(modelid))
 
     """  Forward LSTM (fourth layer)
     """
     lstm4 = network.sublayers[6]
-    print_lstm(lstm4, 'lstmF4_rnnrf_flipflop5_{}'.format(modelid))
+    print_lstm(lstm4, 'lstmF4_rnnrf_rle5_{}'.format(modelid))
 
     """ backward LSTM(fifth layer)
     """
     lstm5 = network.sublayers[7].layer
-    print_lstm(lstm5, 'lstmB5_rnnrf_flipflop5_{}'.format(modelid))
+    print_lstm(lstm5, 'lstmB5_rnnrf_rle5_{}'.format(modelid))
     """ Global norm layer
     """
     gnlayer = network.sublayers[8]
     nstate = gnlayer.linear.weight.shape[0]
-    cformatM(sys.stdout, 'FF_rnnrf_flipflop5_{}W'.format(modelid), gnlayer.linear.weight)
-    cformatV(sys.stdout, 'FF_rnnrf_flipflop5_{}b'.format(modelid), gnlayer.linear.bias)
+    cformatM(sys.stdout, 'FF_rnnrf_rle5_{}W'.format(modelid), gnlayer.linear.weight)
+    cformatV(sys.stdout, 'FF_rnnrf_rle5_{}b'.format(modelid), gnlayer.linear.bias)
 
-    sys.stdout.write('#endif /* FLIPFLOP_{}MODEL_H */'.format(modelid.upper()))
+    sys.stdout.write('#endif /* RLE_{}MODEL_H */'.format(modelid.upper()))

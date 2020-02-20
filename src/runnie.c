@@ -65,7 +65,7 @@ static struct argp_option options[] = {
 };
 
 
-#define DEFAULT_MODEL RUNNIE_NEWMODEL_R941_NATIVE
+#define DEFAULT_MODEL RUNNIE_MODEL_R941_NATIVE
 
 struct arguments {
     int compression_level;
@@ -90,7 +90,7 @@ struct arguments {
 static struct arguments args = {
     .compression_level = 1,
     .compression_chunk_size = 200,
-    .delta = 1.0f,
+    .delta = 0.0f,
     .trace = NULL,
     .limit = 0,
     .model = DEFAULT_MODEL,

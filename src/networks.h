@@ -21,7 +21,6 @@ enum model_type {
     FLAPPIE_MODEL_R10C_PCR,
     FLAPPIE_MODEL_INVALID,
     RUNNIE_MODEL_R941_NATIVE,
-    RUNNIE_NEWMODEL_R941_NATIVE,
     RUNNIE_MODEL_INVALID
 };
 
@@ -38,8 +37,7 @@ flappie_matrix calculate_transitions(const raw_table signal, float temperature, 
 flappie_matrix flipflop5_transitions_r941native(const raw_table signal, float temperature);
 flappie_matrix flipflop_transitions_r941native5mC(const raw_table signal, float temperature);
 flappie_matrix flipflop_transitions_r10Cpcr(const raw_table signal, float temperature);
-flappie_matrix runlength_transitions_r941native(const raw_table signal, float temperature);
-flappie_matrix runlengthV2_transitions_r941native(const raw_table signal, float temperature);
+flappie_matrix runlength5_transitions_r941native(const raw_table signal, float temperature);
 
 
 #endif    /* NETWORKS_H */
