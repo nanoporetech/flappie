@@ -12,6 +12,7 @@
 
 #    include "flappie_matrix.h"
 
+void swish_activation_inplace(flappie_matrix C);
 void tanh_activation_inplace(flappie_matrix C);
 void exp_activation_inplace(flappie_matrix C);
 void log_activation_inplace(flappie_matrix C);

@@ -2,6 +2,11 @@
 
 Flappie is a prototype basecaller for the sequence platforms produced by Oxford Nanopore Technologies.
 
+##  2.1.1 (_Solea solea_)
+Improved Flip-flop and RLE models
+- Accuracy improvements, typically > +1%
+- Performance improvements, approximated 2x faster
+
 ##  2.1.0 (_Lepidopsetta bilineata_)
 _Runnie(r)_, improved Run-Length Encoding.
 - Improved RLE model

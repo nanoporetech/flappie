@@ -17,6 +17,22 @@
 #include "util.h"
 
 
+/**  Apply "swish" to a matrix element-wise
+ *  @param C Matrix
+ *
+ **/
+void swish_activation_inplace(flappie_matrix C) {
+    RETURN_NULL_IF(NULL == C, );
+    for (size_t c = 0; c < C->nc; ++c) {
+        const size_t offset = c * C->nrq;
+        for (size_t r = 0; r < C->nrq; ++r) {
+            C->data.v[offset + r] *= LOGISTICFV(C->data.v[offset + r]);
+        }
+    }
+    (void)validate_flappie_matrix(C, -1.0, 1.0, 0.0, true, __FILE__, __LINE__);
+}
+
+
 /**  Apply tanh to a matrix element-wise
  *  @param C Matrix
  *
