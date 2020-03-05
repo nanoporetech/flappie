@@ -23,7 +23,7 @@ set (CPACK_PACKAGE_DESCRIPTION_FILE "${PROJECT_SOURCE_DIR}/README.md")
 #set (CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE.md")
 set (CPACK_PACKAGE_VERSION_MAJOR 2)
 set (CPACK_PACKAGE_VERSION_MINOR 1)
-set (CPACK_PACKAGE_VERSION_PATCH 1)
+set (CPACK_PACKAGE_VERSION_PATCH 2)
 
 # Get the latest abbreviated commit hash of the working branch
 execute_process(
@@ -155,12 +155,13 @@ add_executable(flappie_unittest
 target_include_directories(flappie_unittest PUBLIC "src/test" "src")
 target_link_libraries(flappie_unittest flappie_static ${BLAS} ${HDF5} m cunit)
 
-set (READSDIR ${PROJECT_SOURCE_DIR}/reads)
+set (READSDIR ${PROJECT_SOURCE_DIR}/reads/single/)
 set (TESTREAD "single/de1508c4-755b-489e-9ffb-51af35c9a7e6.fast5")
 set (ENV{OPENBLAS_NUM_THREADS} 1)
 
 add_test(NAME unittest WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/test/ COMMAND flappie_unittest)
 add_test(test_flappie_call flappie ${READSDIR})
+add_test(test_flappie_vitonly flappie --viterbi ${READSDIR})
 add_test(test_flappie_licence flappie --licence)
 add_test(test_flappie_license flappie --license)
 add_test(test_flappie_help flappie --help)

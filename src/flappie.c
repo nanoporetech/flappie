@@ -51,6 +51,9 @@ static struct argp_option options[] = {
     {"licence", 10, 0, 0, "Print licensing information"},
     {"license", 11, 0, OPTION_ALIAS, "Print licensing information"},
     {"segmentation", 3, "chunk:percentile", 0, "Chunk size and percentile for variance based segmentation"},
+    {"viterbi", 'v', 0, 0, "Use viterbi decoding only"},
+    {"no-viterbi", 8, 0, OPTION_ALIAS, "Use forward-backward followed by viterbi"},
+    {"fb", 9, 0, OPTION_ALIAS, "Use forward-backward followed by viterbi"},
     {"hdf5-compression", 12, "level", 0,
      "Gzip compression level for HDF5 output (0:off, 1: quickest, 9: best)"},
     {"hdf5-chunk", 13, "size", 0, "Chunk size for HDF5 output"},
@@ -77,6 +80,7 @@ struct arguments {
     int trim_end;
     int varseg_chunk;
     float varseg_thresh;
+    bool viterbi_only;
     char ** files;
     bool uuid;
 };
@@ -95,6 +99,7 @@ static struct arguments args = {
     .trim_end = 10,
     .varseg_chunk = 100,
     .varseg_thresh = 0.0f,
+    .viterbi_only = false,
     .files = NULL,
     .uuid = true
 };
@@ -162,6 +167,9 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
     case 'T':
         args.trace = arg;
         break;
+    case 'v':
+        args.viterbi_only = true;
+        break;
     case 3:
         args.varseg_chunk = atoi(strtok(arg, ":"));
         next_tok = strtok(NULL, ":");
@@ -175,6 +183,10 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
     case 7:
 	args.temperature = atof(arg);
 	assert(isfinite(args.temperature) && args.temperature > 0.0f);
+        break;
+    case 8:
+    case 9:
+        args.viterbi_only = false;
         break;
     case 10:
     case 11:
@@ -241,7 +253,11 @@ static struct _raw_basecall_info calculate_post(char * filename, enum model_type
 
     float score = NAN;
 
-    flappie_matrix posterior = transpost_crf_flipflop(trans_weights, true);
+    flappie_matrix posterior = trans_weights;
+    if( ! args.viterbi_only){
+        posterior = transpost_crf_flipflop(trans_weights, true);
+        free(trans_weights);
+    }
     score = decode_crf_flipflop(posterior, false, path, qpath);
     size_t path_nidx = change_positions(path, nblock, path_idx);
 
@@ -259,7 +275,6 @@ static struct _raw_basecall_info calculate_post(char * filename, enum model_type
     free(qpath);
     free(path_idx);
     free(path);
-    trans_weights = free_flappie_matrix(trans_weights);
     const size_t basecall_length = strlen(basecall);
 
     return (struct _raw_basecall_info) {
