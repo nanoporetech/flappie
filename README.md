@@ -83,6 +83,21 @@ find reads -name \*.fast5 | parallel -P $(nproc) -X flappie > basecalls.fq
 find reads -name \*.fast5 | parallel -P $(nproc) -X flappie --trace trace_{%}.hdf5 {} > basecalls.fq
 ```
 
+### Detecting RNA
+
+Calling RNA differs from DNA in two respects:
+1. Output sequences must be reversed, since the molecule is sequenced in reverse (3' to 5')
+2. 'Delta scaling' must be used.
+
+Direct RNA flip-flop is trained in a different manner from previous models, meaning that it is invariant to shifts in current and does not normalise the range of each read.
+The difference in normalisation from standard flip-flop improves accuracy for short reads, or those with unusual sequence composition.
+
+```bash
+flappie --model r941_rna002 --reverse --delta 1.0 reads/ > basecalls.fq
+```
+
+
+
 ## Trace viewer
 
 A basic trace viewer is supplied with _Flappie_, supporting trace output for both _Flappie_ and _Guppy_.
