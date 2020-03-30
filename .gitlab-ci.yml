@@ -1,0 +1,101 @@
+#  Yaml CI config for Gitlab See. http://docs.gitlab.com/ce/ci/yaml/README.html
+#  Machine image on which to build, test etc
+
+variables:
+  CI_VERSION_PATCH: $CI_BUILD_ID
+  BUILD_DIR16:        "build16"
+  BUILD_DIR18:        "build18"
+  BUILD_DIR20:        "build20"
+
+
+stages:
+  - build
+  - test
+  - publish
+
+
+building-u16:
+  image: ${IMAGE_HOST}/algorithm/scrappie_docker:16.04-latest
+  stage: build
+  script:
+      - mkdir ${BUILD_DIR16} && (cd ${BUILD_DIR16} && cmake .. && make flappie flappie_unittest runnie && make package)
+  artifacts:
+    paths:
+      - ${BUILD_DIR16}/*.deb
+      - ${BUILD_DIR16}/flappie
+      - ${BUILD_DIR16}/flappie_unittest
+      - ${BUILD_DIR16}/libflappie.so
+      - ${BUILD_DIR16}/libflappie.a
+      - ${BUILD_DIR16}/runnie
+      - ${BUILD_DIR16}/Makefile
+      - ${BUILD_DIR16}/CTestTestfile.cmake
+      - ${BUILD_DIR16}/CMakeFiles/flappie_test.dir/
+
+
+building-u18:
+  image: ${IMAGE_HOST}/algorithm/scrappie_docker:18.04-latest
+  stage: build
+  script:
+      - mkdir ${BUILD_DIR18} && (cd ${BUILD_DIR18} && cmake .. && make flappie flappie_unittest runnie && make package)
+  artifacts:
+    paths:
+      - ${BUILD_DIR18}/*.deb
+      - ${BUILD_DIR18}/flappie
+      - ${BUILD_DIR18}/flappie_unittest
+      - ${BUILD_DIR18}/libflappie.so
+      - ${BUILD_DIR18}/libflappie.a
+      - ${BUILD_DIR18}/runnie
+      - ${BUILD_DIR18}/Makefile
+      - ${BUILD_DIR18}/CTestTestfile.cmake
+      - ${BUILD_DIR18}/CMakeFiles/flappie_test.dir/
+
+
+building-u20:
+  image: ${IMAGE_HOST}/algorithm/scrappie_docker:20.04-latest
+  stage: build
+  script:
+      - mkdir ${BUILD_DIR20} && (cd ${BUILD_DIR20} && cmake .. && make flappie flappie_unittest runnie && make package)
+  artifacts:
+    paths:
+      - ${BUILD_DIR20}/*.deb
+      - ${BUILD_DIR20}/flappie
+      - ${BUILD_DIR20}/flappie_unittest
+      - ${BUILD_DIR20}/libflappie.so
+      - ${BUILD_DIR20}/libflappie.a
+      - ${BUILD_DIR20}/runnie
+      - ${BUILD_DIR20}/Makefile
+      - ${BUILD_DIR20}/CTestTestfile.cmake
+      - ${BUILD_DIR20}/CMakeFiles/flappie_test.dir/
+
+
+testing-u16:
+  image: ${IMAGE_HOST}/algorithm/scrappie_docker:16.04-latest
+  stage: test
+  script:
+      - cd ${BUILD_DIR16} && make test
+  artifacts:
+    when: always
+    paths:
+        - ${BUILD_DIR16}/Testing
+
+
+testing-u18:
+  image: ${IMAGE_HOST}/algorithm/scrappie_docker:18.04-latest
+  stage: test
+  script:
+      - cd ${BUILD_DIR18} && make test
+  artifacts:
+    when: always
+    paths:
+      - ${BUILD_DIR18}/Testing
+
+
+testing-u20:
+  image: ${IMAGE_HOST}/algorithm/scrappie_docker:20.04-latest
+  stage: test
+  script:
+      - cd ${BUILD_DIR20} && make test
+  artifacts:
+    when: always
+    paths:
+      - ${BUILD_DIR20}/Testing
