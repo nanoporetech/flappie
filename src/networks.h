@@ -17,6 +17,7 @@ typedef flappie_matrix (*transition_function_ptr)(const raw_table, float);
 
 enum model_type {
     FLAPPIE_MODEL_R941_NATIVE = 0,
+    FLAPPIE_MODEL_R941_RNA002,
     FLAPPIE_MODEL_R941_5mC,
     FLAPPIE_MODEL_R103_NATIVE,
     FLAPPIE_MODEL_INVALID,
@@ -35,6 +36,7 @@ transition_function_ptr get_transition_function(const enum model_type model);
 flappie_matrix calculate_transitions(const raw_table signal, float temperature, enum model_type model);
 
 flappie_matrix flipflop5_transitions_r941native(const raw_table signal, float temperature);
+flappie_matrix flipflop5_transitions_r941rna002(const raw_table signal, float temperature);
 flappie_matrix flipflop_transitions_r941native5mC(const raw_table signal, float temperature);
 flappie_matrix flipflop5_transitions_r103native(const raw_table signal, float temperature);
 flappie_matrix runlength5_transitions_r941native(const raw_table signal, float temperature);

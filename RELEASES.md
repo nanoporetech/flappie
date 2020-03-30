@@ -2,6 +2,10 @@
 
 Flappie is a prototype basecaller for the sequence platforms produced by Oxford Nanopore Technologies.
 
+##  2.1.3 (_Pelotretis flavilatus_)
+New Flip-flop model for direct RNA
+- Accuracy improvement, typically +1.5% over Guppy Hac v3.5.1
+
 ##  2.1.2 (_Pleuronichthys decurrens_)
 Further improvements to Flip-flop and RLE models
 - Accuracy improvement, typically +1.5% over Guppy Hac v3.4

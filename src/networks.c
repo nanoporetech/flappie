@@ -8,6 +8,7 @@
 
 #include "layers.h"
 #include "models/flipflop5_r941native.h"
+#include "models/flipflop5_r941rna002.h"
 #include "models/flipflop_r941native5mC.h"
 #include "models/flipflop5_r103native.h"
 #include "models/runlength5_r941native.h"
@@ -21,6 +22,9 @@ enum model_type get_flappie_model_type(const char *modelstr){
     assert(NULL != modelstr);
     if(0 == strcmp(modelstr, "r941_native")) {
         return FLAPPIE_MODEL_R941_NATIVE;
+    }
+    if(0 == strcmp(modelstr, "r941_rna002")) {
+        return FLAPPIE_MODEL_R941_RNA002;
     }
     if(0 == strcmp(modelstr, "r941_5mC")) {
         return FLAPPIE_MODEL_R941_5mC;
@@ -39,6 +43,8 @@ const char *flappie_model_string(const enum model_type model){
     switch(model){
     case FLAPPIE_MODEL_R941_NATIVE:
         return "r941_native";
+    case FLAPPIE_MODEL_R941_RNA002:
+        return "r941_rna002";
     case FLAPPIE_MODEL_R941_5mC:
         return "r941_5mC";
     case FLAPPIE_MODEL_R103_NATIVE:
@@ -59,6 +65,8 @@ const char *flappie_model_description(const enum model_type model){
     switch(model){
     case FLAPPIE_MODEL_R941_NATIVE:
         return "R9.4.1 model for MinION.  Trained from native DNA library";
+    case FLAPPIE_MODEL_R941_RNA002:
+        return "R9.4.1 dRNA model for MinION.  Trained from native and synthetic RNA library";
     case FLAPPIE_MODEL_R941_5mC:
         return "R9.4.1 model for PromethION; 5mC aware.  Trained from native NA12878 library";
     case FLAPPIE_MODEL_R103_NATIVE:
@@ -79,6 +87,8 @@ transition_function_ptr get_transition_function(const enum model_type model){
     switch(model){
     case FLAPPIE_MODEL_R941_NATIVE:
         return flipflop5_transitions_r941native;
+    case FLAPPIE_MODEL_R941_RNA002:
+        return flipflop5_transitions_r941rna002;
     case FLAPPIE_MODEL_R941_5mC:
         return flipflop_transitions_r941native5mC;
     case FLAPPIE_MODEL_R103_NATIVE:
@@ -240,6 +250,44 @@ guppy_stride5_model flipflop5_r941native_guppy = {
     //  Output
     .FF_W = &_FF_rnnrf_flipflop5_r941native_W,
     .FF_b = &_FF_rnnrf_flipflop5_r941native_b
+};
+
+
+guppy_stride5_model flipflop5_r941rna002_guppy = {
+    //  Convolution layer
+    .conv1_W = &_conv1_rnnrf_flipflop5_r941rna002_W,
+    .conv1_b = &_conv1_rnnrf_flipflop5_r941rna002_b,
+    .conv1_stride = conv1_rnnrf_flipflop5_r941rna002_stride,
+    .conv2_W = &_conv2_rnnrf_flipflop5_r941rna002_W,
+    .conv2_b = &_conv2_rnnrf_flipflop5_r941rna002_b,
+    .conv2_stride = conv2_rnnrf_flipflop5_r941rna002_stride,
+    .conv3_W = &_conv3_rnnrf_flipflop5_r941rna002_W,
+    .conv3_b = &_conv3_rnnrf_flipflop5_r941rna002_b,
+    .conv3_stride = conv3_rnnrf_flipflop5_r941rna002_stride,
+    //.conv_stride = 2,
+    //  First modified LSTM (backward)
+    .lstmB1_iW = &_lstmB1_rnnrf_flipflop5_r941rna002_iW,
+    .lstmB1_sW = &_lstmB1_rnnrf_flipflop5_r941rna002_sW,
+    .lstmB1_b = &_lstmB1_rnnrf_flipflop5_r941rna002_b,
+    //  Second modified LSTM (forward)
+    .lstmF2_iW = &_lstmF2_rnnrf_flipflop5_r941rna002_iW,
+    .lstmF2_sW = &_lstmF2_rnnrf_flipflop5_r941rna002_sW,
+    .lstmF2_b = &_lstmF2_rnnrf_flipflop5_r941rna002_b,
+    //  Third modified LSTM (backward)
+    .lstmB3_iW = &_lstmB3_rnnrf_flipflop5_r941rna002_iW,
+    .lstmB3_sW = &_lstmB3_rnnrf_flipflop5_r941rna002_sW,
+    .lstmB3_b = &_lstmB3_rnnrf_flipflop5_r941rna002_b,
+    //  Fourth modified LSTM (forward)
+    .lstmF4_iW = &_lstmF4_rnnrf_flipflop5_r941rna002_iW,
+    .lstmF4_sW = &_lstmF4_rnnrf_flipflop5_r941rna002_sW,
+    .lstmF4_b = &_lstmF4_rnnrf_flipflop5_r941rna002_b,
+    //  Fifth modified LSTM (backward)
+    .lstmB5_iW = &_lstmB5_rnnrf_flipflop5_r941rna002_iW,
+    .lstmB5_sW = &_lstmB5_rnnrf_flipflop5_r941rna002_sW,
+    .lstmB5_b = &_lstmB5_rnnrf_flipflop5_r941rna002_b,
+    //  Output
+    .FF_W = &_FF_rnnrf_flipflop5_r941rna002_W,
+    .FF_b = &_FF_rnnrf_flipflop5_r941rna002_b
 };
 
 
@@ -676,6 +724,10 @@ flappie_matrix runlength5_guppy_transitions(const raw_table signal, float temper
 
 flappie_matrix flipflop5_transitions_r941native(const raw_table signal, float temperature){
     return flipflop5_guppy_transitions(signal, temperature, &flipflop5_r941native_guppy);
+}
+
+flappie_matrix flipflop5_transitions_r941rna002(const raw_table signal, float temperature){
+    return flipflop5_guppy_transitions(signal, temperature, &flipflop5_r941rna002_guppy);
 }
 
 flappie_matrix flipflop_transitions_r941native5mC(const raw_table signal, float temperature){
