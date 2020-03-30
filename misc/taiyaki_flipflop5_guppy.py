@@ -14,7 +14,7 @@ import sys
 
 from taiyaki import helpers
 from taiyaki.cmdargs import AutoBool, FileExists
-from taiyaki.layers import _cudnn_to_guppy_gru
+from taiyaki.layers import _cudnn_to_guppy_gru, DeltaSample
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--id', default='' , help='Identifier for model names')
@@ -107,6 +107,10 @@ if __name__ == '__main__':
     modelid = args.id + '_'
 
     network = helpers.load_model(args.model)
+
+    if isinstance(network.sublayers[0], DeltaSample):
+        sys.stderr.write('* Removing initial DeltaSample layer\n')
+        network.sublayers = network.sublayers[1:]
 
     sys.stdout.write("""#pragma once
     #ifndef FLIPFLOP_{}MODEL_H
