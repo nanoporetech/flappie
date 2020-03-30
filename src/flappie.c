@@ -40,11 +40,14 @@ extern const char *argp_program_bug_address;
 static char doc[] = "Flappie basecaller -- basecall from raw signal";
 static char args_doc[] = "fast5 [fast5 ...]";
 static struct argp_option options[] = {
+    {"delta", 'd', "factor", 0, "Using delta samples model with scaling factor"},
     {"format", 'f', "format", 0, "Format to output reads (FASTA or SAM)"},
     {"limit", 'l', "nreads", 0, "Maximum number of reads to call (0 is unlimited)"},
     {"model", 'm', "name", 0, "Model to use (\"help\" to list)"},
     {"output", 'o', "filename", 0, "Write to file rather than stdout"},
     {"prefix", 'p', "string", 0, "Prefix to append to name of each read"},
+    {"reverse", 'r', 0, 0 , "Reverse output base calls"},
+    {"no-reverse", 6, 0, OPTION_ALIAS, "Don't reverse output base calls"},
     {"temperature", 7, "factor", 0, "Temperature for weights"},
     {"trim", 't', "start:end", 0, "Number of samples to trim, as start:end"},
     {"trace", 'T', "filename", 0, "Dump trace to HDF5 file"},
@@ -69,12 +72,14 @@ static struct argp_option options[] = {
 struct arguments {
     int compression_level;
     int compression_chunk_size;
+    float delta;
     char * trace;
     enum flappie_outformat_type outformat;
     int limit;
     enum model_type model;
     FILE * output;
     char * prefix;
+    bool reverse;
     float temperature;
     int trim_start;
     int trim_end;
@@ -88,12 +93,14 @@ struct arguments {
 static struct arguments args = {
     .compression_level = 1,
     .compression_chunk_size = 200,
+    .delta = 0.0f,
     .trace = NULL,
     .limit = 0,
     .model = DEFAULT_MODEL,
     .output = NULL,
     .outformat = FLAPPIE_OUTFORMAT_FASTQ,
     .prefix = "",
+    .reverse = false,
     .temperature = 1.0f,
     .trim_start = 200,
     .trim_end = 10,
@@ -122,6 +129,9 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
     char * next_tok = NULL;
 
     switch(key){
+    case 'd':
+        args.delta = atof(arg);
+        break;
     case 'f':
         args.outformat = get_outformat(arg);
         if(FLAPPIE_OUTFORMAT_INVALID == args.outformat){
@@ -153,6 +163,9 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
     case 'p':
         args.prefix = arg;
         break;
+    case'r':
+        args.reverse = true;
+        break;
     case 't':
         args.trim_start = atoi(strtok(arg, ":"));
         next_tok = strtok(NULL, ":");
@@ -179,6 +192,9 @@ static error_t parse_arg(int key, char * arg, struct  argp_state * state){
         args.varseg_thresh = atof(next_tok) / 100.0;
         assert(args.varseg_chunk >= 0);
         assert(args.varseg_thresh > 0.0 && args.varseg_thresh < 1.0);
+        break;
+    case 6:
+        args.reverse = false;
         break;
     case 7:
 	args.temperature = atof(arg);
@@ -235,7 +251,13 @@ static struct _raw_basecall_info calculate_post(char * filename, enum model_type
     rt = trim_and_segment_raw(rt, args.trim_start, args.trim_end, args.varseg_chunk, args.varseg_thresh);
     RETURN_NULL_IF(NULL == rt.raw, (struct _raw_basecall_info){0});
 
-    medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
+    if( args.delta == 0.0f){
+        medmad_normalise_array(rt.raw + rt.start, rt.end - rt.start);
+    } else {
+        difference_array(rt.raw + rt.start, rt.end - rt.start);
+        shift_scale_array(rt.raw + rt.start, rt.end - rt.start, 0.0, args.delta);
+    }
+
 
     flappie_matrix trans_weights = calculate_transitions(rt, args.temperature, model);
     if (NULL == trans_weights) {
@@ -267,6 +289,11 @@ static struct _raw_basecall_info calculate_post(char * filename, enum model_type
         const size_t idx = path_idx[i];
         basecall[i] = base_lookup[path[idx] % nbase];
         quality[i] = phredf(expf(qpath[idx]));
+    }
+
+    if(args.reverse){
+        reverse_char_array(basecall, path_nidx);
+        reverse_char_array(quality, path_nidx);
     }
 
     exp_activation_inplace(posterior);

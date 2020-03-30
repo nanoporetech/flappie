@@ -413,6 +413,19 @@ void qscore_array(float * x, size_t n){
 }
 
 
+void reverse_char_array(char * x, size_t n){
+    if(NULL == x || 0 == n){
+        return;
+    }
+    for(size_t i=0 ; i < n / 2 ; i++){
+        size_t ri = n - i - 1;
+        char tmp = x[i];
+        x[i] =  x[ri];
+        x[ri] = tmp;
+    }
+}
+
+
 char * phredstr_from_qscore(float * x, size_t n){
     if(NULL == x || 0 == n){
         return NULL;

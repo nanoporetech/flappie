@@ -427,6 +427,7 @@ void difference_array(float *x, size_t n);
 void filter_array(float *x, size_t n, float fill_val, float thresh);
 void clip_array(float *x, size_t n, float thresh);
 void qscore_array(float *x, size_t n);
+void reverse_char_array(char * x, size_t n);
 
 bool equality_array(double const * x, double const * y, size_t n, double const tol);
 bool equality_arrayf(float const * x, float const * y, size_t n, float const tol);
